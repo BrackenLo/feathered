@@ -1,0 +1,11 @@
+[package]
+name = "feathered_runner"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+feathered_common.path = "../feathered_common"
+feathered_shipyard.path = "../feathered_shipyard"
+log = "0.4.22"
+shipyard = "0.7.3"
+winit = "0.30.5"

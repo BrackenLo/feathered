@@ -1,0 +1,9 @@
+[package]
+name = "feathered_common"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+feathered_shipyard.path = "../feathered_shipyard"
+raw-window-handle = "0.6.2"
+shipyard = "0.7.3"

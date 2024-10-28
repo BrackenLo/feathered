@@ -1,0 +1,10 @@
+[workspace]
+resolver = "2"
+
+members = [
+  "feathered_common",
+  "feathered_proc",
+  "feathered_render_tools",
+  "feathered_runner",
+  "feathered_shipyard",
+]

@@ -1,0 +1,13 @@
+[package]
+name = "feathered_shipyard"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+enum-iterator = "2.1.0"
+feathered_proc.path = "../feathered_proc"
+log = "0.4.22"
+shipyard = "0.7"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+shipyard = { version = "0.7", features = ["thread_local"] }
