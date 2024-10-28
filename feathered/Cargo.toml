@@ -1,0 +1,10 @@
+[package]
+name = "feathered"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+feathered_common.path = "../feathered_common"
+feathered_render_tools.path = "../feathered_render_tools"
+feathered_runner.path = "../feathered_runner"
+feathered_shipyard.path = "../feathered_shipyard"

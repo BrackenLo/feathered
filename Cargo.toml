@@ -2,6 +2,7 @@
 resolver = "2"
 
 members = [
+  "feathered",
   "feathered_common",
   "feathered_proc",
   "feathered_render_tools",

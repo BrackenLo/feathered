@@ -25,7 +25,7 @@ impl Window {
 
 //====================================================================
 
-pub fn sys_add_window(window: Arc<winit::window::Window>, all_storages: AllStoragesView) {
+pub(crate) fn sys_add_window(window: Arc<winit::window::Window>, all_storages: AllStoragesView) {
     let size = Size::new(window.inner_size().width, window.inner_size().height);
 
     all_storages
@@ -34,7 +34,7 @@ pub fn sys_add_window(window: Arc<winit::window::Window>, all_storages: AllStora
         .insert(WindowRaw::new(window.clone(), size));
 }
 
-pub fn sys_resize(
+pub(crate) fn sys_resize(
     new_size: Size<u32>,
     mut window_size: ResMut<WindowSize>,
     mut resize_event: ResMut<EventHandle<WindowResizeEvent>>,

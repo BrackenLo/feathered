@@ -7,7 +7,9 @@ use feathered_common::Size;
 use feathered_shipyard::{
     builder::{register_main_stages, WorkloadBuilder},
     runner::WorkloadRunner,
+    tools::UniqueTools,
 };
+use shipyard::Unique;
 use winit::{
     application::ApplicationHandler,
     event::{DeviceEvent, DeviceId, StartCause, WindowEvent},
@@ -117,12 +119,31 @@ impl ApplicationHandler for Runner {
 
 //====================================================================
 
-const TIMESTEP: f32 = 1. / 75.;
+const DEFAULT_TIMESTEP: f32 = 1. / 75.;
 
-pub struct RunnerInner {
+#[derive(Unique)]
+pub struct RunnerTargetFPS(Duration);
+
+impl RunnerTargetFPS {
+    pub fn update_target(&mut self, duration: Duration) {
+        // if duration.as_secs_f32() >= 1. {
+        //     return;
+        // }
+        self.0 = duration;
+    }
+}
+
+impl Default for RunnerTargetFPS {
+    fn default() -> Self {
+        Self(Duration::from_secs_f32(DEFAULT_TIMESTEP))
+    }
+}
+
+//====================================================================
+
+struct RunnerInner {
     world: shipyard::World,
     workload_runner: WorkloadRunner,
-    timestep: Duration,
 }
 
 impl RunnerInner {
@@ -138,12 +159,12 @@ impl RunnerInner {
         );
 
         world.run_with_data(window::sys_add_window, window);
+        world.insert(RunnerTargetFPS::default());
         workload_runner.prep(&world);
 
         Self {
             world,
             workload_runner,
-            timestep: Duration::from_secs_f32(TIMESTEP),
         }
     }
 
@@ -168,8 +189,13 @@ impl RunnerInner {
             WindowEvent::RedrawRequested => {
                 self.tick();
 
+                let timestep = self
+                    .world
+                    .borrow::<feathered_shipyard::Res<RunnerTargetFPS>>()
+                    .unwrap();
+
                 event_loop
-                    .set_control_flow(winit::event_loop::ControlFlow::wait_duration(self.timestep));
+                    .set_control_flow(winit::event_loop::ControlFlow::wait_duration(timestep.0));
             }
 
             WindowEvent::KeyboardInput { event, .. } => {
