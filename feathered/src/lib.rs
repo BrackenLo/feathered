@@ -6,7 +6,7 @@ pub mod common {
 
 pub mod render_tools {
     pub use feathered_render_tools::{
-        camera,
+        camera, shared,
         texture::{DepthTexture, Texture},
         tools, ClearColor, Device, Queue, RenderEncoder, RenderPass, RenderPassDesc, Surface,
         SurfaceConfig, Vertex,

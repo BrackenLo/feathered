@@ -7,6 +7,7 @@ use shipyard::{AllStoragesView, Unique};
 use texture::DepthTexture;
 
 pub mod camera;
+pub mod shared;
 pub mod texture;
 pub mod tools;
 
