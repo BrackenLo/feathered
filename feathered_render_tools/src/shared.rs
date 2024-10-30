@@ -1,8 +1,9 @@
 //====================================================================
 
-use shipyard::Unique;
+use feathered_shipyard::{tools::UniqueTools, Res};
+use shipyard::{AllStoragesView, Unique};
 
-use crate::{texture::Texture, tools, Vertex};
+use crate::{texture::Texture, tools, Device, Vertex};
 
 //====================================================================
 
@@ -50,6 +51,10 @@ impl SharedRenderResources {
             ],
         })
     }
+}
+
+pub fn sys_setup_shared_resources(all_storages: AllStoragesView, device: Res<Device>) {
+    all_storages.insert(SharedRenderResources::new(device.inner()));
 }
 
 //====================================================================

@@ -8,8 +8,9 @@ pub mod render_tools {
     pub use feathered_render_tools::{
         camera, shared,
         texture::{DepthTexture, Texture},
-        tools, ClearColor, Device, Queue, RenderEncoder, RenderPass, RenderPassDesc, Surface,
-        SurfaceConfig, Vertex,
+        tools, ClearColor, Device, FullRenderToolsPlugin, Queue, RenderComponentsPlugin,
+        RenderEncoder, RenderPass, RenderPassDesc, RenderUtilsPlugin, Surface, SurfaceConfig,
+        Vertex,
     };
 }
 
@@ -38,8 +39,10 @@ pub mod shipyard {
 
 pub mod systems {
     pub use feathered_render_tools::{
+        shared::sys_setup_shared_resources,
         sys_finish_main_render_pass, sys_setup_encoder, sys_setup_render_pass,
         sys_setup_renderer_components, sys_submit_encoder,
+        texture::{sys_resize_depth_texture, sys_setup_depth_texture},
     };
 }
 

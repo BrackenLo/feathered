@@ -1,15 +1,88 @@
 //====================================================================
 
 use feathered_common::{Size, WindowRaw};
-use feathered_shipyard::{tools::UniqueTools, Res, ResMut};
+use feathered_shipyard::{
+    builder::{First, Plugin, Render, Setup},
+    tools::UniqueTools,
+    Res, ResMut,
+};
 use pollster::FutureExt;
-use shipyard::{AllStoragesView, Unique};
+use shipyard::{AllStoragesView, IntoWorkload, SystemModificator, Unique, WorkloadModificator};
 use texture::DepthTexture;
 
 pub mod camera;
 pub mod shared;
 pub mod texture;
 pub mod tools;
+
+//====================================================================
+
+#[derive(shipyard::Label, Debug, Clone, PartialEq, Hash)]
+pub struct SetupRendererComponents;
+
+#[derive(shipyard::Label, Debug, Clone, PartialEq, Hash)]
+pub struct SetupUtils;
+
+#[derive(shipyard::Label, Debug, Clone, PartialEq, Hash)]
+pub struct SetupRenderPass;
+
+#[derive(shipyard::Label, Debug, Clone, PartialEq, Hash)]
+pub struct FinishMainRenderPass;
+
+#[derive(shipyard::Label, Debug, Clone, PartialEq, Hash)]
+pub struct SubmitEncoder;
+
+//--------------------------------------------------
+
+pub struct FullRenderToolsPlugin;
+impl Plugin for FullRenderToolsPlugin {
+    fn build_plugin(self, builder: &mut feathered_shipyard::builder::WorkloadBuilder) {
+        builder
+            .add_plugin(RenderComponentsPlugin)
+            .add_plugin(RenderUtilsPlugin)
+            .add_workload_pre(
+                Render,
+                (sys_setup_encoder, sys_setup_render_pass)
+                    .into_sequential_workload()
+                    .tag(SetupRenderPass),
+            )
+            .add_workload_post(
+                Render,
+                sys_finish_main_render_pass.tag(FinishMainRenderPass),
+            )
+            .add_workload_last(Render, sys_submit_encoder.tag(SubmitEncoder));
+    }
+}
+
+pub struct RenderComponentsPlugin;
+impl Plugin for RenderComponentsPlugin {
+    fn build_plugin(self, builder: &mut feathered_shipyard::builder::WorkloadBuilder) {
+        builder.add_workload_first(
+            Setup,
+            sys_setup_renderer_components.tag(SetupRendererComponents),
+        );
+    }
+}
+
+pub struct RenderUtilsPlugin;
+impl Plugin for RenderUtilsPlugin {
+    fn build_plugin(self, builder: &mut feathered_shipyard::builder::WorkloadBuilder) {
+        builder
+            .add_plugin(RenderComponentsPlugin)
+            .insert(ClearColor::default())
+            .add_workload_first(
+                Setup,
+                (
+                    shared::sys_setup_shared_resources,
+                    texture::sys_setup_depth_texture,
+                )
+                    .into_workload()
+                    .tag(SetupUtils)
+                    .after_all(SetupRendererComponents),
+            )
+            .add_workload_first(First, texture::sys_resize_depth_texture);
+    }
+}
 
 //====================================================================
 
