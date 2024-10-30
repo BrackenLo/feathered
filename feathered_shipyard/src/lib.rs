@@ -7,6 +7,16 @@ pub mod tools;
 
 //====================================================================
 
+pub mod prelude {
+    pub use crate::{
+        builder::{First, Last, Plugin, Render, Setup, SubStages, Update, WorkloadBuilder},
+        tools::UniqueTools,
+        Res, ResMut,
+    };
+}
+
+//====================================================================
+
 pub type Res<'a, T> = shipyard::UniqueView<'a, T>;
 pub type ResMut<'a, T> = shipyard::UniqueViewMut<'a, T>;
 

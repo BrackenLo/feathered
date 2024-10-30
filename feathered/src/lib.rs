@@ -21,10 +21,10 @@ pub mod runner {
 pub mod shipyard {
     pub use feathered_shipyard::{
         builder::{
-            First, FixedUpdate, Label, Last, Plugin, Render, Setup, Stage, SubStages, Update,
-            WorkloadBuilder,
+            First, Label, Last, Plugin, Render, Setup, Stage, SubStages, Update, WorkloadBuilder,
         },
         events::{Event, EventBuilder, EventHandle},
+        prelude,
         tools::{UniqueTools, WorldTools},
         Res, ResMut,
     };
@@ -37,6 +37,16 @@ pub mod shipyard {
     }
 }
 
+pub mod spatial {
+    pub use feathered_spatial::Transform;
+}
+
+pub mod tools {
+    pub use feathered_tools::input::{Input, InputPlugin, KeyboardPlugin, MouseInput, MousePlugin};
+}
+
+//====================================================================
+
 pub mod systems {
     pub use feathered_render_tools::{
         shared::sys_setup_shared_resources,
@@ -44,10 +54,6 @@ pub mod systems {
         sys_setup_renderer_components, sys_submit_encoder,
         texture::{sys_resize_depth_texture, sys_setup_depth_texture},
     };
-}
-
-pub mod tools {
-    pub use feathered_tools::input::{Input, InputPlugin, KeyboardPlugin, MouseInput, MousePlugin};
 }
 
 //====================================================================

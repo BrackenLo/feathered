@@ -16,7 +16,7 @@ pub trait Stage: shipyard::Label + Debug {}
 
 stage_macros::create_stage!(Setup);
 stage_macros::create_stage!(First);
-stage_macros::create_stage!(FixedUpdate);
+// stage_macros::create_stage!(FixedUpdate);
 stage_macros::create_stage!(Update);
 stage_macros::create_stage!(Render);
 stage_macros::create_stage!(Last);
