@@ -6,11 +6,26 @@ use std::{
     time::{Duration, Instant},
 };
 
-use feathered_shipyard::{events::Event, ResMut};
+use feathered_shipyard::{
+    events::{Event, EventBuilder},
+    prelude::*,
+};
 use shipyard::Unique;
 use window_handles::WindowHandle;
 
-pub mod window_handles;
+mod window_handles;
+
+//====================================================================
+
+pub struct CommonPlugin;
+impl Plugin for CommonPlugin {
+    fn build_plugin(self, builder: &mut WorkloadBuilder) {
+        builder
+            .insert(Time::default())
+            .register_event::<WindowResizeEvent>()
+            .add_workload(First, sys_update_time);
+    }
+}
 
 //====================================================================
 

@@ -1,8 +1,9 @@
 //====================================================================
 
-use feathered_common::{Size, WindowRaw};
+use feathered_common::{Size, WindowRaw, WindowResizeEvent};
 use feathered_shipyard::{
     builder::{First, Plugin, Render, Setup},
+    events::EventHandle,
     tools::UniqueTools,
     Res, ResMut,
 };
@@ -57,10 +58,12 @@ impl Plugin for FullRenderToolsPlugin {
 pub struct RenderComponentsPlugin;
 impl Plugin for RenderComponentsPlugin {
     fn build_plugin(self, builder: &mut feathered_shipyard::builder::WorkloadBuilder) {
-        builder.add_workload_first(
-            Setup,
-            sys_setup_renderer_components.tag(SetupRendererComponents),
-        );
+        builder
+            .add_workload_first(
+                Setup,
+                sys_setup_renderer_components.tag(SetupRendererComponents),
+            )
+            .add_workload_first(First, sys_resize_surface);
     }
 }
 
@@ -190,6 +193,19 @@ pub fn sys_setup_renderer_components(all_storages: AllStoragesView, window: Res<
         .insert(Queue(queue))
         .insert(Surface(surface))
         .insert(SurfaceConfig(config));
+}
+
+pub fn sys_resize_surface(
+    device: Res<Device>,
+    surface: Res<Surface>,
+    mut config: ResMut<SurfaceConfig>,
+    window_resize: Res<EventHandle<WindowResizeEvent>>,
+) {
+    if let Some(new_size) = window_resize.iter().last() {
+        let size = new_size.size();
+        config.resize(size);
+        surface.inner().configure(device.inner(), config.inner());
+    }
 }
 
 //====================================================================

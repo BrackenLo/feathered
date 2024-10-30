@@ -82,7 +82,7 @@ pub fn create_pipeline(
         layout: Some(&layout),
         vertex: wgpu::VertexState {
             module: &shader_module,
-            entry_point: "vs_main",
+            entry_point: Some("vs_main"),
             compilation_options: Default::default(),
             buffers: vertex_buffers,
         },
@@ -91,7 +91,7 @@ pub fn create_pipeline(
         multisample: desc.multisample,
         fragment: Some(wgpu::FragmentState {
             module: &shader_module,
-            entry_point: "fs_main",
+            entry_point: Some("fs_main"),
             compilation_options: Default::default(),
             targets: fragment_targets,
         }),
@@ -160,6 +160,7 @@ pub fn bgl_sampler_entry(binding: u32) -> wgpu::BindGroupLayoutEntry {
 pub enum BufferType {
     Vertex,
     Index,
+    Instance,
     Uniform,
 }
 
@@ -172,6 +173,10 @@ pub fn buffer<D: bytemuck::Pod>(
     let (name, usage) = match buffer_type {
         BufferType::Vertex => ("Vertex", wgpu::BufferUsages::VERTEX),
         BufferType::Index => ("Index", wgpu::BufferUsages::INDEX),
+        BufferType::Instance => (
+            "Instance",
+            wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
+        ),
         BufferType::Uniform => (
             "Uniform",
             wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,

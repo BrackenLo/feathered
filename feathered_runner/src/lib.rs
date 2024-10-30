@@ -6,6 +6,7 @@ use events::WindowInputEvent;
 use feathered_common::Size;
 use feathered_shipyard::{
     builder::{register_main_stages, WorkloadBuilder},
+    events::EventBuilder,
     runner::WorkloadRunner,
     tools::UniqueTools,
 };
@@ -38,6 +39,7 @@ impl Runner {
         let mut builder = WorkloadBuilder::new(&world);
 
         register_main_stages(&mut builder);
+        builder.register_event::<WindowInputEvent>();
 
         build_app(&mut builder);
         let runner = builder.build();

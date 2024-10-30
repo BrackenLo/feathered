@@ -1,59 +1,25 @@
 //====================================================================
 
-pub mod common {
-    pub use feathered_common::{Size, WindowRaw, WindowResizeEvent, WindowSize};
-}
+pub use feathered_common as common;
 
-pub mod render_tools {
-    pub use feathered_render_tools::{
-        camera, shared,
-        texture::{DepthTexture, Texture},
-        tools, ClearColor, Device, FullRenderToolsPlugin, Queue, RenderComponentsPlugin,
-        RenderEncoder, RenderPass, RenderPassDesc, RenderUtilsPlugin, Surface, SurfaceConfig,
-        Vertex,
-    };
-}
+pub use feathered_render_tools as render_tools;
 
-pub mod runner {
-    pub use feathered_runner::{events::WindowInputEvent, window::Window, Runner};
-}
+pub use feathered_runner as runner;
 
-pub mod shipyard {
-    pub use feathered_shipyard::{
-        builder::{
-            First, Label, Last, Plugin, Render, Setup, Stage, SubStages, Update, WorkloadBuilder,
-        },
-        events::{Event, EventBuilder, EventHandle},
-        prelude,
-        tools::{UniqueTools, WorldTools},
-        Res, ResMut,
-    };
+pub use feathered_shipyard as shipyard;
 
-    pub mod tools {
-        pub use feathered_shipyard::{
-            builder::{register_main_stages, StageData, WorkloadBuilderInner, WorkloadToBuild},
-            runner::WorkloadRunner,
-        };
-    }
-}
+pub use feathered_spatial as spatial;
 
-pub mod spatial {
-    pub use feathered_spatial::Transform;
-}
-
-pub mod tools {
-    pub use feathered_tools::input::{Input, InputPlugin, KeyboardPlugin, MouseInput, MousePlugin};
-}
+pub use feathered_tools as tools;
 
 //====================================================================
 
-pub mod systems {
-    pub use feathered_render_tools::{
-        shared::sys_setup_shared_resources,
-        sys_finish_main_render_pass, sys_setup_encoder, sys_setup_render_pass,
-        sys_setup_renderer_components, sys_submit_encoder,
-        texture::{sys_resize_depth_texture, sys_setup_depth_texture},
-    };
-}
-
-//====================================================================
+// pub mod systems {
+//     pub use feathered_render_tools::{
+//         shared::sys_setup_shared_resources,
+//         sys_finish_main_render_pass, sys_setup_encoder, sys_setup_render_pass,
+//         sys_setup_renderer_components, sys_submit_encoder,
+//         texture::{sys_resize_depth_texture, sys_setup_depth_texture},
+//     };
+// }
+// ====================================================================

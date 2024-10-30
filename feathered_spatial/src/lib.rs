@@ -106,6 +106,11 @@ impl Transform {
     }
 
     #[inline]
+    pub fn to_matrix(&self) -> glam::Mat4 {
+        glam::Mat4::from_scale_rotation_translation(self.scale, self.rotation, self.translation)
+    }
+
+    #[inline]
     pub fn to_array(&self) -> [f32; 16] {
         glam::Mat4::from_scale_rotation_translation(self.scale, self.rotation, self.translation)
             .to_cols_array()
