@@ -1,0 +1,11 @@
+[package]
+name = "feathered_tools"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+feathered_common = { version = "0.1.0", path = "../feathered_common" }
+feathered_runner = { version = "0.1.0", path = "../feathered_runner" }
+feathered_shipyard = { version = "0.1.0", path = "../feathered_shipyard" }
+glam = "0.29.0"
+shipyard = "0.7.3"

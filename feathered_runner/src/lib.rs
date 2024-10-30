@@ -247,11 +247,17 @@ impl RunnerInner {
     // TODO
     fn device_event(
         &mut self,
-        event_loop: &ActiveEventLoop,
-        device_id: DeviceId,
+        _event_loop: &ActiveEventLoop,
+        _device_id: DeviceId,
         event: DeviceEvent,
     ) {
-        let _ = (event_loop, device_id, event);
+        match event {
+            DeviceEvent::MouseMotion { delta } => self.world.run_with_data(
+                events::sys_send_event,
+                WindowInputEvent::CursorMotion { delta },
+            ),
+            _ => {}
+        }
     }
 }
 

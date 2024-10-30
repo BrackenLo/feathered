@@ -1,8 +1,12 @@
 //====================================================================
 
-use std::{fmt::Display, sync::Arc};
+use std::{
+    fmt::Display,
+    sync::Arc,
+    time::{Duration, Instant},
+};
 
-use feathered_shipyard::events::Event;
+use feathered_shipyard::{events::Event, ResMut};
 use shipyard::Unique;
 use window_handles::WindowHandle;
 
@@ -38,6 +42,53 @@ impl<T: Display> Display for Size<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "({}, {})", self.width, self.height)
     }
+}
+
+//====================================================================
+
+#[derive(Unique)]
+pub struct Time {
+    elapsed: Instant,
+
+    last_frame: Instant,
+    delta: Duration,
+    delta_seconds: f32,
+}
+
+impl Default for Time {
+    fn default() -> Self {
+        Self {
+            elapsed: Instant::now(),
+            last_frame: Instant::now(),
+            delta: Duration::ZERO,
+            delta_seconds: 0.,
+        }
+    }
+}
+
+#[allow(dead_code)]
+impl Time {
+    #[inline]
+    pub fn elapsed(&self) -> &Instant {
+        &self.elapsed
+    }
+
+    #[inline]
+    pub fn delta(&self) -> &Duration {
+        &self.delta
+    }
+
+    #[inline]
+    pub fn delta_seconds(&self) -> f32 {
+        self.delta_seconds
+    }
+}
+
+pub fn sys_update_time(mut time: ResMut<Time>) {
+    time.delta = time.last_frame.elapsed();
+    time.delta_seconds = time.delta.as_secs_f32();
+
+    time.last_frame = Instant::now();
 }
 
 //====================================================================

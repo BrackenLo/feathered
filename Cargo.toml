@@ -8,4 +8,5 @@ members = [
   "feathered_render_tools",
   "feathered_runner",
   "feathered_shipyard",
+  "feathered_tools",
 ]

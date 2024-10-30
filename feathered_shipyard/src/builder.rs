@@ -288,6 +288,12 @@ impl<'a> WorkloadBuilder<'a> {
     workload_macros::create_workload_stage!(add_workload, SubStages::Main);
     workload_macros::create_workload_stage!(add_workload_post, SubStages::Post);
     workload_macros::create_workload_stage!(add_workload_last, SubStages::Last);
+
+    #[inline]
+    pub fn insert<U: shipyard::Unique + Send + Sync>(&mut self, unique: U) -> &mut Self {
+        self.world.add_unique(unique);
+        self
+    }
 }
 
 //--------------------------------------------------

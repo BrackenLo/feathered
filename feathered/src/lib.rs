@@ -43,4 +43,8 @@ pub mod systems {
     };
 }
 
+pub mod tools {
+    pub use feathered_tools::input::{Input, InputPlugin, KeyboardPlugin, MouseInput, MousePlugin};
+}
+
 //====================================================================
