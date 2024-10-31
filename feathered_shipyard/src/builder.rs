@@ -138,36 +138,6 @@ impl<'a> WorkloadBuilder<'a> {
     pub fn build(mut self) -> WorkloadRunner {
         log::trace!("{}", self.inner.build_text);
 
-        // self.inner.stages.iter().for_each(|(id, (stage, _))| {
-        //     match self.inner.workloads.remove(id) {
-        //         Some(mut to_build) => {
-        //             // Iterate through all substages in this stage and add them to the main workload
-        //             // Afterwards, add main workload to world
-
-        //             enum_iterator::all::<SubStages>()
-        //                 .into_iter()
-        //                 .fold(to_build.main, |acc, substage| {
-        //                     // Check and add substage if it exists
-        //                     if let Some(workload) = to_build.substages.remove(&substage) {
-        //                         let workload = workload.tag(substage);
-        //                         return acc.merge(
-        //                             substage.into_iter().fold(workload, |acc, substage_after| {
-        //                                 acc.before_all(substage_after)
-        //                             }),
-        //                         );
-        //                     }
-
-        //                     acc
-        //                 })
-        //                 .add_to_world(self.world)
-        //                 .unwrap();
-        //         }
-
-        //         // Stage doesn't exist. Throw Warning
-        //         None => log::warn!("Failed to get stage {:?}", stage),
-        //     }
-        // });
-
         self.inner.workloads.drain().for_each(|(_, mut to_build)| {
             enum_iterator::all::<SubStages>()
                 .into_iter()
