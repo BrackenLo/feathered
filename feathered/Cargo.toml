@@ -3,11 +3,14 @@ name = "feathered"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+text = ["feathered_text"]
+
 [dependencies]
 feathered_common.path = "../feathered_common"
 feathered_render_tools.path = "../feathered_render_tools"
 feathered_runner.path = "../feathered_runner"
 feathered_shipyard.path = "../feathered_shipyard"
 feathered_spatial.path = "../feathered_spatial"
-feathered_text.path = "../feathered_text"
+feathered_text = { path = "../feathered_text", optional = true }
 feathered_tools.path = "../feathered_tools"
