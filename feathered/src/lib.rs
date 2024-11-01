@@ -10,6 +10,8 @@ pub use feathered_shipyard as shipyard;
 
 pub use feathered_spatial as spatial;
 
+pub use feathered_text as text;
+
 pub use feathered_tools as tools;
 
 //====================================================================

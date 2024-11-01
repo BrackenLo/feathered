@@ -1,6 +1,44 @@
 //====================================================================
 
+use feathered_shipyard::{tools::UniqueTools, Res};
+use shipyard::{AllStoragesView, Unique};
 use wgpu::util::DeviceExt;
+
+use crate::Device;
+
+//====================================================================
+
+#[derive(Unique)]
+pub struct MainCamera(pub Camera);
+
+impl MainCamera {
+    #[inline]
+    pub fn new<C: CameraUniform>(device: &wgpu::Device, camera: &C) -> Self {
+        Self(Camera::new(device, camera))
+    }
+
+    #[inline]
+    pub fn update_camera<C: CameraUniform>(&self, queue: &wgpu::Queue, camera: &C) {
+        self.0.update_camera(queue, camera);
+    }
+
+    #[inline]
+    pub fn bind_group_layout(&self) -> &wgpu::BindGroupLayout {
+        self.0.bind_group_layout()
+    }
+
+    #[inline]
+    pub fn bind_group(&self) -> &wgpu::BindGroup {
+        self.0.bind_group()
+    }
+}
+
+pub fn sys_setup_main_camera(all_storages: AllStoragesView, device: Res<Device>) {
+    all_storages.insert(MainCamera::new(
+        device.inner(),
+        &PerspectiveCamera::default(),
+    ));
+}
 
 //====================================================================
 

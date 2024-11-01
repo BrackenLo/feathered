@@ -78,6 +78,7 @@ impl Plugin for RenderUtilsPlugin {
                 (
                     shared::sys_setup_shared_resources,
                     texture::sys_setup_depth_texture,
+                    camera::sys_setup_main_camera,
                 )
                     .into_workload()
                     .tag(SetupUtils)

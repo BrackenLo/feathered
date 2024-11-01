@@ -9,5 +9,6 @@ members = [
   "feathered_runner",
   "feathered_shipyard",
   "feathered_spatial",
+  "feathered_text",
   "feathered_tools",
 ]
