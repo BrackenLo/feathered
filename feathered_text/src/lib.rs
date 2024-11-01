@@ -5,6 +5,8 @@ use feathered_shipyard::prelude::*;
 use shipyard::{AllStoragesView, SystemModificator, Unique};
 use text_atlas::TextAtlas;
 
+pub mod shared;
+// pub mod text2d;
 pub mod text3d;
 pub mod text_atlas;
 
