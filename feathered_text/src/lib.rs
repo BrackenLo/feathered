@@ -10,7 +10,7 @@ pub mod shared;
 pub mod text3d;
 pub mod text_atlas;
 
-pub use cosmic_text::{Attrs, Color, Metrics};
+pub use cosmic_text::{Attrs, Color, Metrics, Wrap};
 
 //====================================================================
 
@@ -35,6 +35,10 @@ impl FontSystem {
     pub fn inner(&self) -> &cosmic_text::FontSystem {
         &self.0
     }
+    #[inline]
+    pub fn inner_mut(&mut self) -> &mut cosmic_text::FontSystem {
+        &mut self.0
+    }
 }
 
 #[derive(Unique)]
@@ -43,6 +47,10 @@ impl SwashCache {
     #[inline]
     pub fn inner(&self) -> &cosmic_text::SwashCache {
         &self.0
+    }
+    #[inline]
+    pub fn inner_mut(&mut self) -> &mut cosmic_text::SwashCache {
+        &mut self.0
     }
 }
 

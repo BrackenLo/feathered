@@ -1,12 +1,7 @@
 //====================================================================
 
 use feathered_common::{Size, WindowRaw, WindowResizeEvent};
-use feathered_shipyard::{
-    builder::{First, Plugin, Render, Setup},
-    events::EventHandle,
-    tools::UniqueTools,
-    Res, ResMut,
-};
+use feathered_shipyard::{events::EventHandle, prelude::*};
 use pollster::FutureExt;
 use shipyard::{AllStoragesView, IntoWorkload, SystemModificator, Unique, WorkloadModificator};
 use texture::DepthTexture;
@@ -37,7 +32,7 @@ pub struct SubmitEncoder;
 
 pub struct FullRenderToolsPlugin;
 impl Plugin for FullRenderToolsPlugin {
-    fn build_plugin(self, builder: &mut feathered_shipyard::builder::WorkloadBuilder) {
+    fn build_plugin(self, builder: &mut WorkloadBuilder) {
         builder
             .add_plugin(RenderComponentsPlugin)
             .add_plugin(RenderUtilsPlugin)
@@ -57,7 +52,7 @@ impl Plugin for FullRenderToolsPlugin {
 
 pub struct RenderComponentsPlugin;
 impl Plugin for RenderComponentsPlugin {
-    fn build_plugin(self, builder: &mut feathered_shipyard::builder::WorkloadBuilder) {
+    fn build_plugin(self, builder: &mut WorkloadBuilder) {
         builder
             .add_workload_first(
                 Setup,
@@ -69,7 +64,7 @@ impl Plugin for RenderComponentsPlugin {
 
 pub struct RenderUtilsPlugin;
 impl Plugin for RenderUtilsPlugin {
-    fn build_plugin(self, builder: &mut feathered_shipyard::builder::WorkloadBuilder) {
+    fn build_plugin(self, builder: &mut WorkloadBuilder) {
         builder
             .add_plugin(RenderComponentsPlugin)
             .insert(ClearColor::default())
@@ -78,13 +73,14 @@ impl Plugin for RenderUtilsPlugin {
                 (
                     shared::sys_setup_shared_resources,
                     texture::sys_setup_depth_texture,
-                    camera::sys_setup_main_camera,
+                    camera::sys_setup_3d_camera,
                 )
                     .into_workload()
                     .tag(SetupUtils)
                     .after_all(SetupRendererComponents),
             )
-            .add_workload_first(First, texture::sys_resize_depth_texture);
+            .add_workload_first(First, texture::sys_resize_depth_texture)
+            .add_workload_last(Update, camera::sys_update_3d_camera);
     }
 }
 
@@ -111,6 +107,11 @@ impl Queue {
     #[inline]
     pub fn inner(&self) -> &wgpu::Queue {
         &self.0
+    }
+
+    #[inline]
+    pub fn write_buffer(&self, buffer: &wgpu::Buffer, offset: u64, data: &[u8]) {
+        self.0.write_buffer(buffer, offset, data);
     }
 }
 

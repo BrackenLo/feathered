@@ -4,40 +4,49 @@ use feathered_shipyard::{tools::UniqueTools, Res};
 use shipyard::{AllStoragesView, Unique};
 use wgpu::util::DeviceExt;
 
-use crate::Device;
+use crate::{Device, Queue};
 
 //====================================================================
 
 #[derive(Unique)]
-pub struct MainCamera(pub Camera);
+pub struct Camera3d {
+    pub raw: Camera,
+    pub camera: PerspectiveCamera,
+}
 
-impl MainCamera {
+impl Camera3d {
     #[inline]
-    pub fn new<C: CameraUniform>(device: &wgpu::Device, camera: &C) -> Self {
-        Self(Camera::new(device, camera))
+    pub fn new(device: &wgpu::Device, camera: PerspectiveCamera) -> Self {
+        Self {
+            raw: Camera::new(device, &camera),
+            camera,
+        }
     }
 
     #[inline]
-    pub fn update_camera<C: CameraUniform>(&self, queue: &wgpu::Queue, camera: &C) {
-        self.0.update_camera(queue, camera);
+    pub fn update_camera(&self, queue: &wgpu::Queue) {
+        self.raw.update_camera(queue, &self.camera);
     }
 
     #[inline]
     pub fn bind_group_layout(&self) -> &wgpu::BindGroupLayout {
-        self.0.bind_group_layout()
+        self.raw.bind_group_layout()
     }
 
     #[inline]
     pub fn bind_group(&self) -> &wgpu::BindGroup {
-        self.0.bind_group()
+        self.raw.bind_group()
     }
 }
 
-pub fn sys_setup_main_camera(all_storages: AllStoragesView, device: Res<Device>) {
-    all_storages.insert(MainCamera::new(
-        device.inner(),
-        &PerspectiveCamera::default(),
-    ));
+pub fn sys_setup_3d_camera(all_storages: AllStoragesView, device: Res<Device>) {
+    all_storages.insert(Camera3d::new(device.inner(), PerspectiveCamera::default()));
+}
+
+pub fn sys_update_3d_camera(queue: Res<Queue>, camera: Res<Camera3d>) {
+    if camera.is_inserted_or_modified() {
+        camera.update_camera(queue.inner())
+    }
 }
 
 //====================================================================

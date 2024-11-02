@@ -102,6 +102,11 @@ impl TextBuffer {
             color: desc.color,
         }
     }
+
+    #[inline]
+    pub fn set_metrics(&mut self, font_system: &mut cosmic_text::FontSystem, metrics: Metrics) {
+        self.buffer.set_metrics(font_system, metrics);
+    }
 }
 
 //====================================================================

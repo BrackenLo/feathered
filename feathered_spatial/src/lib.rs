@@ -89,6 +89,21 @@ impl Transform {
 }
 
 impl Transform {
+    pub fn look_to(&mut self, direction: glam::Vec3, up: glam::Vec3) {
+        let back = -direction.normalize();
+        let right = up
+            .cross(back)
+            .try_normalize()
+            .unwrap_or_else(|| up.any_orthogonal_vector());
+        let up = back.cross(right);
+        self.rotation = glam::Quat::from_mat3(&glam::Mat3::from_cols(right, up, back));
+    }
+
+    #[inline]
+    pub fn look_at(&mut self, target: glam::Vec3, up: glam::Vec3) {
+        self.look_to(target - self.translation, up);
+    }
+
     #[inline]
     pub fn forward(&self) -> glam::Vec3 {
         self.rotation * glam::Vec3::Z
@@ -104,7 +119,9 @@ impl Transform {
         self.rotation = self.rotation.lerp(target.rotation, s);
         self.scale = self.scale.lerp(target.scale, s);
     }
+}
 
+impl Transform {
     #[inline]
     pub fn to_matrix(&self) -> glam::Mat4 {
         glam::Mat4::from_scale_rotation_translation(self.scale, self.rotation, self.translation)

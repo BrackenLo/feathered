@@ -3,13 +3,15 @@
 use std::{collections::HashSet, hash::Hash};
 
 use feathered_common::WindowSize;
-use feathered_runner::events::{KeyCode, MouseButton, WindowInputEvent};
+use feathered_runner::events::{MouseButton, WindowInputEvent};
 use feathered_shipyard::{
     builder::{First, Last, Plugin, WorkloadBuilder},
     events::EventHandle,
     Res, ResMut,
 };
 use shipyard::Unique;
+
+pub use feathered_runner::events::KeyCode;
 
 //====================================================================
 

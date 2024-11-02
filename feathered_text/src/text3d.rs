@@ -1,8 +1,6 @@
 //====================================================================
 
-use feathered_render_tools::{
-    camera::MainCamera, Device, Queue, RenderPass, SurfaceConfig, Vertex,
-};
+use feathered_render_tools::{camera::Camera3d, Device, Queue, RenderPass, SurfaceConfig, Vertex};
 use feathered_shipyard::prelude::*;
 use feathered_spatial::Transform;
 use shipyard::{AllStoragesView, Component, IntoIter, SystemModificator, Unique, View, ViewMut};
@@ -35,7 +33,7 @@ fn sys_setup_text_renderer(
     device: Res<Device>,
     config: Res<SurfaceConfig>,
     text_atlas: Res<TextAtlas>,
-    camera: Res<MainCamera>,
+    camera: Res<Camera3d>,
 ) {
     all_storages.insert(Text3dRenderer::new(
         device.inner(),
@@ -92,7 +90,7 @@ fn sys_render_text(
     renderer: Res<Text3dRenderer>,
     text_atlas: Res<TextAtlas>,
     v_text_buffer: View<Text3dBuffer>,
-    camera: Res<MainCamera>,
+    camera: Res<Camera3d>,
 ) {
     renderer.render(
         render_pass.pass(),
@@ -133,7 +131,7 @@ impl Text3dBuffer {
 
         let uniform_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("Text 3d Uniform Bind Group"),
-            layout: &text3d_renderer.buffer_bind_group_layout,
+            layout: &text3d_renderer.uniform_bind_group_layout,
             entries: &[wgpu::BindGroupEntry {
                 binding: 0,
                 resource: wgpu::BindingResource::Buffer(uniform_buffer.as_entire_buffer_binding()),
@@ -147,6 +145,7 @@ impl Text3dBuffer {
         }
     }
 
+    #[inline]
     pub fn update_transform(&self, queue: &wgpu::Queue, transform: &Transform) {
         queue.write_buffer(
             &self.uniform_buffer,
@@ -161,7 +160,7 @@ impl Text3dBuffer {
 #[derive(Unique)]
 pub struct Text3dRenderer {
     pipeline: wgpu::RenderPipeline,
-    buffer_bind_group_layout: wgpu::BindGroupLayout,
+    uniform_bind_group_layout: wgpu::BindGroupLayout,
 }
 
 impl Text3dRenderer {
@@ -171,7 +170,7 @@ impl Text3dRenderer {
         text_atlas: &TextAtlas,
         camera_bind_group_layout: &wgpu::BindGroupLayout,
     ) -> Self {
-        let instance_buffer_bind_group_layout =
+        let uniform_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
                 label: Some("Text 3d Renderer Instance Buffer Bind Group Layout"),
                 entries: &[feathered_render_tools::tools::bgl_uniform_entry(
@@ -187,7 +186,7 @@ impl Text3dRenderer {
             &[
                 camera_bind_group_layout,
                 text_atlas.bind_group_layout(),
-                &instance_buffer_bind_group_layout,
+                &uniform_bind_group_layout,
             ],
             &[TextVertex::desc()],
             include_str!("text3d.wgsl"),
@@ -210,39 +209,9 @@ impl Text3dRenderer {
 
         Self {
             pipeline,
-            buffer_bind_group_layout: instance_buffer_bind_group_layout,
+            uniform_bind_group_layout,
         }
     }
-
-    // pub fn prep<'a>(
-    //     &mut self,
-    //     device: &wgpu::Device,
-    //     queue: &wgpu::Queue,
-    //     font_system: &mut cosmic_text::FontSystem,
-    //     swash_cache: &mut cosmic_text::SwashCache,
-    //     text_atlas: &mut TextAtlas,
-    //     buffers: impl IntoIterator<Item = &'a mut Text3dBuffer>,
-    // ) {
-    //     buffers.into_iter().for_each(|text3d_buffer| {
-    //         if let Some(rebuild) = crate::shared::prep::<TextVertex>(
-    //             device,
-    //             queue,
-    //             font_system,
-    //             swash_cache,
-    //             text_atlas,
-    //             &mut text3d_buffer.text_buffer,
-    //         ) {
-    //             feathered_render_tools::tools::update_instance_buffer(
-    //                 device,
-    //                 queue,
-    //                 "Text3d Vertex Buffer",
-    //                 &mut text3d_buffer.text_buffer.vertex_buffer,
-    //                 &mut text3d_buffer.text_buffer.vertex_count,
-    //                 &rebuild,
-    //             );
-    //         }
-    //     });
-    // }
 
     pub fn render<'a, B>(
         &self,
