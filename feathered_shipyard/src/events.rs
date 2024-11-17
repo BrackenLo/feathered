@@ -17,9 +17,19 @@ pub trait Event: 'static + Send + Sync + std::fmt::Debug {}
 pub trait EventBuilder {
     fn register_event<E: Event>(&mut self) -> &mut Self;
 
+    #[inline]
     fn event_workload<E: Event>(
         &mut self,
         workload_id: impl shipyard::Label + Debug,
+        workload: shipyard::Workload,
+    ) -> &mut Self {
+        self.event_workload_sub::<E>(workload_id, SubStages::Main, workload)
+    }
+
+    fn event_workload_sub<E: Event>(
+        &mut self,
+        workload_id: impl shipyard::Label + Debug,
+        substage: SubStages,
         workload: shipyard::Workload,
     ) -> &mut Self;
 }
@@ -37,20 +47,30 @@ impl<'a> EventBuilder for WorkloadBuilder<'a> {
             First,
             SubStages::Main,
             (sys_setup_events::<E>).into_workload(),
+            true,
         );
 
         self
     }
 
-    fn event_workload<E: Event>(
+    fn event_workload_sub<E: Event>(
         &mut self,
         workload_id: impl shipyard::Label + Debug,
+        substage: SubStages,
         workload: shipyard::Workload,
     ) -> &mut Self {
+        self.get_inner().log(format!(
+            "Adding event workload '{}' for '{:?}' - substage {:?}",
+            std::any::type_name::<E>(),
+            workload_id,
+            substage
+        ));
+
         self.get_inner().add_workload_sub(
             workload_id,
-            SubStages::Main,
+            substage,
             workload.skip_if(sys_check_skip_event::<E>),
+            true,
         );
 
         self
@@ -88,6 +108,11 @@ impl<E: Event> EventHandle<E> {
     #[inline]
     pub fn events(&self) -> &Vec<E> {
         &self.events
+    }
+
+    #[inline]
+    pub fn first(&self) -> Option<&E> {
+        self.events.first()
     }
 
     #[inline]

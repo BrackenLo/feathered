@@ -202,7 +202,7 @@ pub fn prep(
             let line_entry = &mut text_buffer.lines[index];
 
             if line_hash != line_entry.hash {
-                log::trace!("Line '{}' hash updated '{}'", index, line_hash);
+                // log::trace!("Line '{}' hash updated '{}'", index, line_hash);
 
                 line_entry.hash = line_hash;
                 line_entry.length = line_length;

@@ -98,8 +98,7 @@ pub struct WorkloadBuilderInner {
     registered_workload_names: HashMap<String, String>, // Type ID : Workload Name
     registered_plugins: Vec<TypeId>,
 
-    build_tabs: u8,
-    build_text: String,
+    pub build_tabs: u8,
 }
 
 pub struct WorkloadToBuild {
@@ -120,6 +119,7 @@ impl WorkloadToBuild {
 
 impl<'a> WorkloadBuilder<'a> {
     pub fn new(world: &'a World) -> Self {
+        log::trace!("Setting up Workload Builder");
         Self {
             world,
             inner: WorkloadBuilderInner {
@@ -130,14 +130,11 @@ impl<'a> WorkloadBuilder<'a> {
                 registered_plugins: Vec::new(),
 
                 build_tabs: 0,
-                build_text: "Setting up Workload Builder".to_string(),
             },
         }
     }
 
     pub fn build(mut self) -> WorkloadRunner {
-        log::trace!("{}", self.inner.build_text);
-
         self.inner.workloads.drain().for_each(|(_, mut to_build)| {
             enum_iterator::all::<SubStages>()
                 .into_iter()
@@ -180,7 +177,7 @@ impl<'a> WorkloadBuilder<'a> {
             },
         );
 
-        log::debug!("{data}");
+        log::trace!("{data}");
 
         WorkloadRunner::new(self.inner.stages)
     }
@@ -281,7 +278,7 @@ mod workload_macros {
                 R: 'static,
             {
                 self.inner
-                    .add_workload_sub(stage, $sub_stage, workload.into_workload());
+                    .add_workload_sub(stage, $sub_stage, workload.into_workload(), false);
                 self
             }
         };
@@ -306,7 +303,7 @@ impl WorkloadBuilderInner {
 
     pub fn log(&mut self, text: String) {
         let tabs = (0..self.build_tabs).map(|_| "\t").collect::<String>();
-        self.build_text = format!("{}\n{}⌙ {}", self.build_text, tabs, text);
+        log::trace!("{}⌙ {}", tabs, text);
     }
 
     pub fn add_workload_sub<S: shipyard::Label + Debug>(
@@ -314,11 +311,14 @@ impl WorkloadBuilderInner {
         workload_id: S,
         substage: SubStages,
         workload: shipyard::Workload,
+        silent: bool,
     ) {
-        self.log(format!(
-            "Adding workload for '{:?}' - substage {:?}",
-            workload_id, substage
-        ));
+        if !silent {
+            self.log(format!(
+                "Adding workload for '{:?}' - substage {:?}",
+                workload_id, substage
+            ));
+        }
 
         let label = workload_id.as_label();
 

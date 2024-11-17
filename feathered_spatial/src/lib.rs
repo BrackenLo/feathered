@@ -4,7 +4,7 @@ use shipyard::Component;
 
 //====================================================================
 
-#[derive(Component)]
+#[derive(Component, Clone, Debug, PartialEq)]
 #[track(All)]
 pub struct Transform {
     pub translation: glam::Vec3,
