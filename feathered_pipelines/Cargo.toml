@@ -1,0 +1,15 @@
+[package]
+name = "feathered_pipelines"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+bytemuck = { version = "1.19.0", features = ["derive"] }
+feathered_common.path = "../feathered_common"
+feathered_render_tools.path = "../feathered_render_tools"
+feathered_shipyard.path = "../feathered_shipyard"
+feathered_spatial.path = "../feathered_spatial"
+glam = { version = "0.29.2", features = ["bytemuck"] }
+log = "0.4.22"
+shipyard = "0.7.4"
+wgpu = "23.0.0"

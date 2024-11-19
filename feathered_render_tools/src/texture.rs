@@ -1,5 +1,7 @@
 //====================================================================
 
+use std::sync::{atomic::AtomicU32, Arc};
+
 use feathered_common::{Size, WasmWrapper, WindowResizeEvent, WindowSize};
 use feathered_shipyard::{
     events::{EventReader, ReadEvents},
@@ -9,7 +11,7 @@ use feathered_shipyard::{
 use image::GenericImageView;
 use shipyard::AllStoragesView;
 
-use crate::Device;
+use crate::{shared::SharedRenderResources, Device};
 
 //====================================================================
 
@@ -55,6 +57,65 @@ pub fn sys_resize_depth_texture(
 
 //====================================================================
 
+pub type TextureId = u32;
+
+static CURRENT_TEXTURE_ID: AtomicU32 = AtomicU32::new(0);
+
+#[derive(Debug, Clone)]
+pub struct LoadedTexture {
+    inner: Arc<LoadedInner>,
+}
+
+#[derive(Debug)]
+struct LoadedInner {
+    id: TextureId,
+    texture: WasmWrapper<Texture>,
+    bind_group: WasmWrapper<wgpu::BindGroup>,
+}
+
+impl LoadedTexture {
+    pub fn load_texture(
+        device: &wgpu::Device,
+        shared: &SharedRenderResources,
+        texture: Texture,
+    ) -> Self {
+        let id = CURRENT_TEXTURE_ID.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        let bind_group = shared.create_texture_bind_group(device, &texture, None);
+        Self {
+            inner: Arc::new(LoadedInner {
+                id,
+                texture: WasmWrapper::new(texture),
+                bind_group: WasmWrapper::new(bind_group),
+            }),
+        }
+    }
+
+    #[inline]
+    pub fn id(&self) -> TextureId {
+        self.inner.id
+    }
+
+    #[inline]
+    pub fn texture(&self) -> &Texture {
+        self.inner.texture.inner()
+    }
+
+    #[inline]
+    pub fn bind_group(&self) -> &wgpu::BindGroup {
+        self.inner.bind_group.inner()
+    }
+}
+
+impl PartialEq for LoadedTexture {
+    #[inline]
+    fn eq(&self, other: &Self) -> bool {
+        self.inner.id == other.inner.id
+    }
+}
+
+//====================================================================
+
+#[derive(Debug)]
 pub struct Texture {
     pub texture: wgpu::Texture,
     pub view: wgpu::TextureView,

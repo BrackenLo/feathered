@@ -2,6 +2,8 @@
 
 pub use feathered_common as common;
 
+pub use feathered_pipelines as pipelines;
+
 pub use feathered_render_tools as render_tools;
 
 pub use feathered_runner as runner;

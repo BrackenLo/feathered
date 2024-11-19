@@ -1,7 +1,8 @@
 //====================================================================
 
-use std::num::NonZeroU32;
+use std::{marker::PhantomData, num::NonZeroU32};
 
+use feathered_common::WasmWrapper;
 use wgpu::util::DeviceExt;
 
 use crate::texture::Texture;
@@ -235,6 +236,60 @@ pub fn create_instance_buffer<T: bytemuck::Pod>(
         contents: bytemuck::cast_slice(data),
         usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
     })
+}
+
+//====================================================================
+
+#[derive(Debug)]
+pub struct InstanceBuffer<T> {
+    phantom: PhantomData<T>,
+    buffer: WasmWrapper<wgpu::Buffer>,
+    count: u32,
+    label: String,
+}
+
+impl<T: bytemuck::Pod> InstanceBuffer<T> {
+    #[inline]
+    pub fn new(device: &wgpu::Device, data: &[T]) -> Self {
+        let label = format!("{} Instance Buffer", std::any::type_name::<T>());
+
+        Self {
+            phantom: PhantomData,
+            buffer: WasmWrapper::new(buffer(device, BufferType::Instance, &label, data)),
+            count: data.len() as u32,
+            label,
+        }
+    }
+
+    #[inline]
+    pub fn update(&mut self, device: &wgpu::Device, queue: &wgpu::Queue, data: &[T]) {
+        update_instance_buffer(
+            device,
+            queue,
+            &self.label,
+            self.buffer.inner_mut(),
+            &mut self.count,
+            data,
+        );
+    }
+
+    #[inline]
+    pub fn buffer(&self) -> &wgpu::Buffer {
+        self.buffer.inner()
+    }
+
+    #[inline]
+    pub fn slice<S>(&self, bounds: S) -> wgpu::BufferSlice<'_>
+    where
+        S: std::ops::RangeBounds<wgpu::BufferAddress>,
+    {
+        self.buffer.inner().slice(bounds)
+    }
+
+    #[inline]
+    pub fn count(&self) -> u32 {
+        self.count
+    }
 }
 
 //====================================================================
