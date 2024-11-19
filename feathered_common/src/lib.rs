@@ -90,6 +90,13 @@ impl<T> From<(T, T)> for Size<T> {
     }
 }
 
+impl<T> From<Size<T>> for (T, T) {
+    #[inline]
+    fn from(value: Size<T>) -> Self {
+        (value.width, value.height)
+    }
+}
+
 impl<T: Display> Display for Size<T> {
     #[inline]
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -153,6 +160,7 @@ pub struct WindowRaw {
 }
 
 impl WindowRaw {
+    #[inline]
     pub fn new(window: Arc<dyn WindowHandle>, size: Size<u32>) -> Self {
         Self {
             window: WasmWrapper::new(window),
@@ -160,10 +168,12 @@ impl WindowRaw {
         }
     }
 
+    #[inline]
     pub fn arc(&self) -> &Arc<dyn WindowHandle> {
         &self.window.0
     }
 
+    #[inline]
     pub fn size(&self) -> Size<u32> {
         self.size
     }

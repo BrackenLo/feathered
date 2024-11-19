@@ -243,7 +243,7 @@ impl RunnerInner {
 
     fn resumed(&mut self) {
         self.world
-            .run(|window: shipyard::UniqueView<window::Window>| window.request_redraw());
+            .run(|window: shipyard::UniqueView<window::Window>| window.inner().request_redraw());
     }
 
     // TODO

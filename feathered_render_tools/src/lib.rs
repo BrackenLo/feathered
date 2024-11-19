@@ -1,7 +1,10 @@
 //====================================================================
 
 use feathered_common::{Size, WasmWrapper, WindowRaw, WindowResizeEvent};
-use feathered_shipyard::{events::EventHandle, prelude::*};
+use feathered_shipyard::{
+    events::{EventBuilder, EventReader, ReadEvents},
+    prelude::*,
+};
 use pollster::FutureExt;
 use shipyard::{AllStoragesView, IntoWorkload, SystemModificator, Unique, WorkloadModificator};
 use texture::DepthTexture;
@@ -58,7 +61,7 @@ impl Plugin for RenderComponentsPlugin {
                 Setup,
                 sys_setup_renderer_components.tag(SetupRendererComponents),
             )
-            .add_workload_first(First, sys_resize_surface);
+            .event_workload::<WindowResizeEvent>(First, sys_resize_surface.into_workload());
     }
 }
 
@@ -79,8 +82,12 @@ impl Plugin for RenderUtilsPlugin {
                     .tag(SetupUtils)
                     .after_all(SetupRendererComponents),
             )
-            .add_workload_first(First, texture::sys_resize_depth_texture)
-            .add_workload_last(Update, camera::sys_update_3d_camera);
+            .add_workload(RenderPrep, camera::sys_update_3d_camera)
+            .event_workload_sub::<WindowResizeEvent>(
+                First,
+                SubStages::First,
+                texture::sys_resize_depth_texture.into_workload(),
+            );
     }
 }
 
@@ -212,9 +219,9 @@ pub fn sys_resize_surface(
     device: Res<Device>,
     surface: Res<Surface>,
     mut config: ResMut<SurfaceConfig>,
-    window_resize: Res<EventHandle<WindowResizeEvent>>,
+    window_resize: EventReader<WindowResizeEvent>,
 ) {
-    if let Some(new_size) = window_resize.iter().last() {
+    if let Some(new_size) = window_resize.last() {
         let size = new_size.size();
         config.resize(size);
         surface.inner().configure(device.inner(), config.inner());

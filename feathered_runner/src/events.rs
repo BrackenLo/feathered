@@ -1,7 +1,7 @@
 //====================================================================
 
 use feathered_shipyard::{
-    events::{Event, EventHandle},
+    events::{Event, EventHandle, WriteEvents},
     ResMut,
 };
 pub use winit::{event::MouseButton, keyboard::KeyCode};

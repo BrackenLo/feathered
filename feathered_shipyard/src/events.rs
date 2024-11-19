@@ -2,7 +2,7 @@
 
 use std::fmt::Debug;
 
-use shipyard::{IntoWorkload, Unique, WorkloadModificator};
+use shipyard::{Borrow, BorrowInfo, IntoWorkload, Unique, WorkloadModificator};
 
 use crate::{
     builder::{First, SubStages, WorkloadBuilder},
@@ -41,7 +41,10 @@ impl<'a> EventBuilder for WorkloadBuilder<'a> {
             std::any::type_name::<E>()
         ));
 
-        self.get_world().add_unique(EventHandle::<E>::default());
+        self.get_world().add_unique(EventHandle::<E> {
+            pending_events: Vec::new(),
+            events: Vec::new(),
+        });
 
         self.get_inner().add_workload_sub(
             First,
@@ -79,42 +82,122 @@ impl<'a> EventBuilder for WorkloadBuilder<'a> {
 
 //====================================================================
 
+pub trait ReadEvents<E: Event> {
+    fn iter(&self) -> std::slice::Iter<E>;
+    fn events(&self) -> &Vec<E>;
+    fn first(&self) -> Option<&E>;
+    fn last(&self) -> Option<&E>;
+}
+
+pub trait WriteEvents<E: Event> {
+    fn send_event(&mut self, event: E);
+}
+
+//--------------------------------------------------
+
+trait GetEventHandle<E: Event> {
+    fn handle(&self) -> &EventHandle<E>;
+}
+
+trait GetEventHandleMut<E: Event> {
+    fn handle_mut(&mut self) -> &mut EventHandle<E>;
+}
+
+//--------------------------------------------------
+
+impl<E, T> ReadEvents<E> for T
+where
+    E: Event,
+    T: GetEventHandle<E>,
+{
+    #[inline]
+    fn iter(&self) -> std::slice::Iter<E> {
+        self.handle().events.iter()
+    }
+
+    #[inline]
+    fn events(&self) -> &Vec<E> {
+        &self.handle().events
+    }
+
+    #[inline]
+    fn first(&self) -> Option<&E> {
+        self.handle().events.first()
+    }
+
+    #[inline]
+    fn last(&self) -> Option<&E> {
+        self.handle().events.last()
+    }
+}
+
+impl<E, T> WriteEvents<E> for T
+where
+    E: Event,
+    T: GetEventHandleMut<E>,
+{
+    #[inline]
+    fn send_event(&mut self, event: E) {
+        self.handle_mut().pending_events.push(event)
+    }
+}
+
+//====================================================================
+
 #[derive(Unique)]
 pub struct EventHandle<E: Event> {
     pending_events: Vec<E>,
     events: Vec<E>,
 }
 
-impl<E: Event> Default for EventHandle<E> {
-    fn default() -> Self {
-        Self {
-            pending_events: Vec::new(),
-            events: Vec::new(),
-        }
+#[derive(Borrow, BorrowInfo)]
+pub struct EventReader<'v, E: Event> {
+    handle: Res<'v, EventHandle<E>>,
+}
+
+#[derive(Borrow, BorrowInfo)]
+pub struct EventSender<'v, E: Event> {
+    handle: ResMut<'v, EventHandle<E>>,
+}
+
+//--------------------------------------------------
+
+impl<E: Event> GetEventHandle<E> for EventHandle<E> {
+    #[inline]
+    fn handle(&self) -> &EventHandle<E> {
+        self
+    }
+}
+impl<E: Event> GetEventHandleMut<E> for EventHandle<E> {
+    #[inline]
+    fn handle_mut(&mut self) -> &mut EventHandle<E> {
+        self
     }
 }
 
+impl<'v, E: Event> GetEventHandle<E> for EventReader<'v, E> {
+    #[inline]
+    fn handle(&self) -> &EventHandle<E> {
+        &self.handle
+    }
+}
+
+impl<'v, E: Event> GetEventHandle<E> for EventSender<'v, E> {
+    #[inline]
+    fn handle(&self) -> &EventHandle<E> {
+        &self.handle
+    }
+}
+impl<'v, E: Event> GetEventHandleMut<E> for EventSender<'v, E> {
+    #[inline]
+    fn handle_mut(&mut self) -> &mut EventHandle<E> {
+        &mut self.handle
+    }
+}
+
+//====================================================================
+
 impl<E: Event> EventHandle<E> {
-    #[inline]
-    pub fn send_event(&mut self, event: E) {
-        self.pending_events.push(event);
-    }
-
-    #[inline]
-    pub fn iter(&self) -> std::slice::Iter<E> {
-        self.events.iter()
-    }
-
-    #[inline]
-    pub fn events(&self) -> &Vec<E> {
-        &self.events
-    }
-
-    #[inline]
-    pub fn first(&self) -> Option<&E> {
-        self.events.first()
-    }
-
     #[inline]
     fn setup_events(&mut self) {
         std::mem::swap(&mut self.pending_events, &mut self.events);

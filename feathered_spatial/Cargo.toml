@@ -4,5 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+feathered_shipyard.path = "../feathered_shipyard"
 glam = "0.29.1"
 shipyard = "0.7.3"

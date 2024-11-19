@@ -18,6 +18,7 @@ stage_macros::create_stage!(Setup);
 stage_macros::create_stage!(First);
 // stage_macros::create_stage!(FixedUpdate);
 stage_macros::create_stage!(Update);
+stage_macros::create_stage!(RenderPrep);
 stage_macros::create_stage!(Render);
 stage_macros::create_stage!(Last);
 
@@ -26,6 +27,7 @@ pub fn register_main_stages(builder: &mut WorkloadBuilder) {
         .register_stage(Setup, StageData::from_priority(0), None)
         .register_stage(First, StageData::from_priority(10), None)
         .register_stage(Update, StageData::from_priority(20), None)
+        .register_stage(RenderPrep, StageData::from_priority(38), None)
         .register_stage(Render, StageData::from_priority(30), None)
         .register_stage(Last, StageData::from_priority(40), None);
 }

@@ -1,7 +1,11 @@
 //====================================================================
 
 use feathered_common::{Size, WasmWrapper, WindowResizeEvent, WindowSize};
-use feathered_shipyard::{events::EventHandle, tools::UniqueTools, Res, ResMut};
+use feathered_shipyard::{
+    events::{EventReader, ReadEvents},
+    tools::UniqueTools,
+    Res, ResMut,
+};
 use image::GenericImageView;
 use shipyard::AllStoragesView;
 
@@ -42,9 +46,9 @@ pub fn sys_setup_depth_texture(
 pub fn sys_resize_depth_texture(
     device: Res<Device>,
     mut depth_texture: ResMut<DepthTexture>,
-    window_resize: Res<EventHandle<WindowResizeEvent>>,
+    window_resize: EventReader<WindowResizeEvent>,
 ) {
-    if let Some(size) = window_resize.iter().last() {
+    if let Some(size) = window_resize.last() {
         depth_texture.resize(device.inner(), size.size());
     }
 }

@@ -7,7 +7,7 @@ use feathered_render_tools::{
 };
 use feathered_shipyard::prelude::*;
 use feathered_spatial::Transform;
-use shipyard::{AllStoragesView, Component, IntoIter, SystemModificator, Unique, View, ViewMut};
+use shipyard::{AllStoragesView, Component, IntoIter, SystemModificator, Unique};
 use wgpu::util::DeviceExt;
 
 use crate::{
@@ -24,7 +24,7 @@ impl Plugin for Text3dPlugin {
         builder
             .add_plugin(CoreTextPlugin)
             .add_workload_pre(Setup, sys_setup_text_renderer)
-            .add_workload_last(Update, (sys_prep_text, sys_prep_text_transform))
+            .add_workload(RenderPrep, (sys_prep_text, sys_prep_text_transform))
             .add_workload(
                 Render,
                 sys_render_text.skip_if_missing_unique::<RenderPass>(),

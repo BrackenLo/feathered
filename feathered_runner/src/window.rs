@@ -3,7 +3,11 @@
 use std::sync::Arc;
 
 use feathered_common::{Size, WindowRaw, WindowResizeEvent, WindowSize};
-use feathered_shipyard::{events::EventHandle, tools::UniqueTools, ResMut};
+use feathered_shipyard::{
+    events::{EventSender, WriteEvents},
+    tools::UniqueTools,
+    ResMut,
+};
 use shipyard::{AllStoragesView, Unique};
 
 //====================================================================
@@ -18,8 +22,31 @@ impl Window {
     }
 
     #[inline]
-    pub fn request_redraw(&self) {
-        self.0.request_redraw();
+    pub fn size(&self) -> Size<u32> {
+        let window_size = self.0.inner_size();
+
+        Size {
+            width: window_size.width,
+            height: window_size.height,
+        }
+    }
+
+    #[inline]
+    pub fn confine_cursor(&self, confined: bool) {
+        log::trace!("Confining window cursor: {}", confined);
+
+        self.0
+            .set_cursor_grab(match confined {
+                true => winit::window::CursorGrabMode::Confined,
+                false => winit::window::CursorGrabMode::None,
+            })
+            .unwrap();
+    }
+
+    #[inline]
+    pub fn hide_cursor(&self, hidden: bool) {
+        log::trace!("Hiding window cursor: {}", hidden);
+        self.0.set_cursor_visible(!hidden);
     }
 }
 
@@ -58,7 +85,7 @@ pub(crate) fn sys_add_window(window: Arc<winit::window::Window>, all_storages: A
 pub(crate) fn sys_resize(
     new_size: Size<u32>,
     mut window_size: ResMut<WindowSize>,
-    mut resize_event: ResMut<EventHandle<WindowResizeEvent>>,
+    mut resize_event: EventSender<WindowResizeEvent>,
 ) {
     *window_size = WindowSize::new(new_size);
     resize_event.send_event(WindowResizeEvent::new(new_size));

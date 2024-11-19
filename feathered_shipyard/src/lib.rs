@@ -9,10 +9,13 @@ pub mod tools;
 
 pub mod prelude {
     pub use crate::{
-        builder::{First, Last, Plugin, Render, Setup, SubStages, Update, WorkloadBuilder},
+        builder::{
+            First, Last, Plugin, Render, RenderPrep, Setup, SubStages, Update, WorkloadBuilder,
+        },
         tools::UniqueTools,
         Res, ResMut,
     };
+    pub use shipyard::{View, ViewMut};
 }
 
 //====================================================================

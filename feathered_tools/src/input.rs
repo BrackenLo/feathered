@@ -2,14 +2,14 @@
 
 use std::{collections::HashSet, hash::Hash};
 
-use feathered_common::WindowSize;
+use feathered_common::{WindowResizeEvent, WindowSize};
 use feathered_runner::events::{MouseButton, WindowInputEvent};
 use feathered_shipyard::{
     builder::{First, Last, Plugin, WorkloadBuilder},
-    events::EventHandle,
+    events::{EventBuilder, EventReader, ReadEvents},
     Res, ResMut,
 };
-use shipyard::Unique;
+use shipyard::{IntoWorkload, Unique};
 
 pub use feathered_runner::events::KeyCode;
 
@@ -27,7 +27,7 @@ impl Plugin for KeyboardPlugin {
     fn build_plugin(self, builder: &mut WorkloadBuilder) {
         builder
             .insert(Input::<KeyCode>::default())
-            .add_workload(First, sys_process_inputs)
+            .event_workload::<WindowResizeEvent>(First, sys_process_inputs.into_workload())
             .add_workload(Last, sys_reset_input::<KeyCode>);
     }
 }
@@ -49,7 +49,7 @@ impl Plugin for MousePlugin {
 //====================================================================
 
 fn sys_process_inputs(
-    input_event: Res<EventHandle<WindowInputEvent>>,
+    input_event: EventReader<WindowInputEvent>,
     size: Res<WindowSize>,
 
     mut keys: Option<ResMut<Input<KeyCode>>>,
