@@ -1,10 +1,6 @@
 //====================================================================
 
-use std::{
-    fmt::Display,
-    sync::Arc,
-    time::{Duration, Instant},
-};
+use std::{fmt::Display, sync::Arc};
 
 use feathered_shipyard::{
     events::{Event, EventBuilder},
@@ -15,6 +11,8 @@ use window_handles::WindowHandle;
 
 mod window_handles;
 
+pub use web_time::{Duration, Instant};
+
 //====================================================================
 
 pub struct CommonPlugin;
@@ -24,6 +22,46 @@ impl Plugin for CommonPlugin {
             .insert(Time::default())
             .register_event::<WindowResizeEvent>()
             .add_workload(First, sys_update_time);
+    }
+}
+
+//====================================================================
+
+#[cfg(not(target_arch = "wasm32"))]
+#[derive(Debug)]
+pub struct WasmWrapper<T>(T);
+
+#[cfg(target_arch = "wasm32")]
+#[derive(Debug)]
+pub struct WasmWrapper<T>(send_wrapper::SendWrapper<T>);
+
+impl<T> WasmWrapper<T> {
+    #[inline]
+    pub fn new(data: T) -> Self {
+        #[cfg(not(target_arch = "wasm32"))]
+        return Self(data);
+
+        #[cfg(target_arch = "wasm32")]
+        return Self(send_wrapper::SendWrapper::new(data));
+    }
+
+    #[inline]
+    pub fn inner(&self) -> &T {
+        &self.0
+    }
+
+    #[inline]
+    pub fn inner_mut(&mut self) -> &mut T {
+        &mut self.0
+    }
+
+    #[inline]
+    pub fn take(self) -> T {
+        #[cfg(not(target_arch = "wasm32"))]
+        return self.0;
+
+        #[cfg(target_arch = "wasm32")]
+        return self.0.take();
     }
 }
 
@@ -110,17 +148,20 @@ pub fn sys_update_time(mut time: ResMut<Time>) {
 
 #[derive(Unique)]
 pub struct WindowRaw {
-    window: Arc<dyn WindowHandle>,
+    window: WasmWrapper<Arc<dyn WindowHandle>>,
     size: Size<u32>,
 }
 
 impl WindowRaw {
     pub fn new(window: Arc<dyn WindowHandle>, size: Size<u32>) -> Self {
-        Self { window, size }
+        Self {
+            window: WasmWrapper::new(window),
+            size,
+        }
     }
 
     pub fn arc(&self) -> &Arc<dyn WindowHandle> {
-        &self.window
+        &self.window.0
     }
 
     pub fn size(&self) -> Size<u32> {

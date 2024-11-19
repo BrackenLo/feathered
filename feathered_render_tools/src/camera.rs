@@ -1,46 +1,54 @@
 //====================================================================
 
+use feathered_common::WasmWrapper;
 use feathered_shipyard::{tools::UniqueTools, Res};
 use shipyard::{AllStoragesView, Unique};
 use wgpu::util::DeviceExt;
 
-use crate::{Device, Queue};
+use crate::{shared::SharedRenderResources, Device, Queue};
 
 //====================================================================
 
 #[derive(Unique)]
 pub struct Camera3d {
-    pub raw: Camera,
-    pub camera: PerspectiveCamera,
+    pub data: PerspectiveCamera,
+    pub wgpu: WasmWrapper<CameraWgpu>,
 }
 
 impl Camera3d {
     #[inline]
-    pub fn new(device: &wgpu::Device, camera: PerspectiveCamera) -> Self {
+    pub fn new(
+        device: &wgpu::Device,
+        shared: &SharedRenderResources,
+        camera: PerspectiveCamera,
+    ) -> Self {
         Self {
-            raw: Camera::new(device, &camera),
-            camera,
+            wgpu: WasmWrapper::new(CameraWgpu::new(device, shared, &camera)),
+            data: camera,
         }
     }
 
     #[inline]
     pub fn update_camera(&self, queue: &wgpu::Queue) {
-        self.raw.update_camera(queue, &self.camera);
-    }
-
-    #[inline]
-    pub fn bind_group_layout(&self) -> &wgpu::BindGroupLayout {
-        self.raw.bind_group_layout()
+        self.wgpu.inner().update_camera(queue, &self.data);
     }
 
     #[inline]
     pub fn bind_group(&self) -> &wgpu::BindGroup {
-        self.raw.bind_group()
+        self.wgpu.inner().bind_group()
     }
 }
 
-pub fn sys_setup_3d_camera(all_storages: AllStoragesView, device: Res<Device>) {
-    all_storages.insert(Camera3d::new(device.inner(), PerspectiveCamera::default()));
+pub fn sys_setup_3d_camera(
+    all_storages: AllStoragesView,
+    device: Res<Device>,
+    shared: Res<SharedRenderResources>,
+) {
+    all_storages.insert(Camera3d::new(
+        device.inner(),
+        &shared,
+        PerspectiveCamera::default(),
+    ));
 }
 
 pub fn sys_update_3d_camera(queue: Res<Queue>, camera: Res<Camera3d>) {
@@ -51,38 +59,26 @@ pub fn sys_update_3d_camera(queue: Res<Queue>, camera: Res<Camera3d>) {
 
 //====================================================================
 
-pub struct Camera {
+pub struct CameraWgpu {
     camera_buffer: wgpu::Buffer,
-    camera_bind_group_layout: wgpu::BindGroupLayout,
     camera_bind_group: wgpu::BindGroup,
 }
 
-impl Camera {
-    pub fn new<C: CameraUniform>(device: &wgpu::Device, camera: &C) -> Self {
+impl CameraWgpu {
+    pub fn new<C: CameraUniform>(
+        device: &wgpu::Device,
+        shared: &SharedRenderResources,
+        camera: &C,
+    ) -> Self {
         let camera_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Camera buffer"),
             contents: bytemuck::cast_slice(&[camera.into_uniform()]),
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
 
-        let camera_bind_group_layout =
-            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                label: Some("Camera Bind Group Layout"),
-                entries: &[wgpu::BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
-                    ty: wgpu::BindingType::Buffer {
-                        ty: wgpu::BufferBindingType::Uniform,
-                        has_dynamic_offset: false,
-                        min_binding_size: None,
-                    },
-                    count: None,
-                }],
-            });
-
         let camera_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("Camera Bind Group"),
-            layout: &camera_bind_group_layout,
+            layout: shared.camera_bind_group_layout(),
             entries: &[wgpu::BindGroupEntry {
                 binding: 0,
                 resource: wgpu::BindingResource::Buffer(camera_buffer.as_entire_buffer_binding()),
@@ -91,7 +87,6 @@ impl Camera {
 
         Self {
             camera_buffer,
-            camera_bind_group_layout,
             camera_bind_group,
         }
     }
@@ -103,11 +98,6 @@ impl Camera {
             0,
             bytemuck::cast_slice(&[camera.into_uniform()]),
         );
-    }
-
-    #[inline]
-    pub fn bind_group_layout(&self) -> &wgpu::BindGroupLayout {
-        &self.camera_bind_group_layout
     }
 
     #[inline]

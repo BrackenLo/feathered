@@ -1,6 +1,6 @@
 //====================================================================
 
-use feathered_common::{Size, WindowRaw, WindowResizeEvent};
+use feathered_common::{Size, WasmWrapper, WindowRaw, WindowResizeEvent};
 use feathered_shipyard::{events::EventHandle, prelude::*};
 use pollster::FutureExt;
 use shipyard::{AllStoragesView, IntoWorkload, SystemModificator, Unique, WorkloadModificator};
@@ -93,34 +93,34 @@ pub trait Vertex: bytemuck::Pod {
 //====================================================================
 
 #[derive(Unique)]
-pub struct Device(wgpu::Device);
+pub struct Device(WasmWrapper<wgpu::Device>);
 impl Device {
     #[inline]
     pub fn inner(&self) -> &wgpu::Device {
-        &self.0
+        &self.0.inner()
     }
 }
 
 #[derive(Unique)]
-pub struct Queue(wgpu::Queue);
+pub struct Queue(WasmWrapper<wgpu::Queue>);
 impl Queue {
     #[inline]
     pub fn inner(&self) -> &wgpu::Queue {
-        &self.0
+        &self.0.inner()
     }
 
     #[inline]
     pub fn write_buffer(&self, buffer: &wgpu::Buffer, offset: u64, data: &[u8]) {
-        self.0.write_buffer(buffer, offset, data);
+        self.0.inner().write_buffer(buffer, offset, data);
     }
 }
 
 #[derive(Unique)]
-pub struct Surface(wgpu::Surface<'static>);
+pub struct Surface(WasmWrapper<wgpu::Surface<'static>>);
 impl Surface {
     #[inline]
     pub fn inner(&self) -> &wgpu::Surface {
-        &self.0
+        &self.0.inner()
     }
 }
 
@@ -146,7 +146,10 @@ pub fn sys_setup_renderer_components(all_storages: AllStoragesView, window: Res<
     let size = window.size();
 
     let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
+        #[cfg(not(target_arch = "wasm32"))]
         backends: wgpu::Backends::PRIMARY,
+        #[cfg(target_arch = "wasm32")]
+        backends: wgpu::Backends::GL,
         ..Default::default()
     });
 
@@ -164,7 +167,15 @@ pub fn sys_setup_renderer_components(all_storages: AllStoragesView, window: Res<
     log::debug!("Chosen device adapter: {:#?}", adapter.get_info());
 
     let (device, queue) = adapter
-        .request_device(&wgpu::DeviceDescriptor::default(), None)
+        .request_device(
+            &wgpu::DeviceDescriptor {
+                #[cfg(target_arch = "wasm32")]
+                required_limits: wgpu::Limits::downlevel_webgl2_defaults(),
+
+                ..Default::default()
+            },
+            None,
+        )
         .block_on()
         .unwrap();
 
@@ -191,9 +202,9 @@ pub fn sys_setup_renderer_components(all_storages: AllStoragesView, window: Res<
     surface.configure(&device, &config);
 
     all_storages
-        .insert(Device(device))
-        .insert(Queue(queue))
-        .insert(Surface(surface))
+        .insert(Device(WasmWrapper::new(device)))
+        .insert(Queue(WasmWrapper::new(queue)))
+        .insert(Surface(WasmWrapper::new(surface)))
         .insert(SurfaceConfig(config));
 }
 
@@ -241,12 +252,12 @@ impl ClearColor {
 //--------------------------------------------------
 
 #[derive(Unique)]
-pub struct RenderPass(wgpu::RenderPass<'static>);
+pub struct RenderPass(WasmWrapper<wgpu::RenderPass<'static>>);
 
 impl RenderPass {
     #[inline]
     pub fn pass(&mut self) -> &mut wgpu::RenderPass<'static> {
-        &mut self.0
+        self.0.inner_mut()
     }
 }
 
@@ -277,9 +288,9 @@ impl Default for RenderPassDesc<'_> {
 
 #[derive(Unique)]
 pub struct RenderEncoder {
-    surface_texture: wgpu::SurfaceTexture,
-    surface_view: wgpu::TextureView,
-    encoder: wgpu::CommandEncoder,
+    surface_texture: WasmWrapper<wgpu::SurfaceTexture>,
+    surface_view: WasmWrapper<wgpu::TextureView>,
+    encoder: WasmWrapper<wgpu::CommandEncoder>,
 }
 
 impl RenderEncoder {
@@ -299,15 +310,15 @@ impl RenderEncoder {
         });
 
         Ok(RenderEncoder {
-            surface_texture,
-            surface_view,
-            encoder,
+            surface_texture: WasmWrapper::new(surface_texture),
+            surface_view: WasmWrapper::new(surface_view),
+            encoder: WasmWrapper::new(encoder),
         })
     }
 
     pub fn finish(self, queue: &wgpu::Queue) {
-        queue.submit(Some(self.encoder.finish()));
-        self.surface_texture.present();
+        queue.submit(Some(self.encoder.take().finish()));
+        self.surface_texture.take().present();
     }
 
     pub fn begin_render_pass(&mut self, desc: RenderPassDesc) -> wgpu::RenderPass {
@@ -334,20 +345,23 @@ impl RenderEncoder {
             None => wgpu::LoadOp::Load,
         };
 
-        let render_pass = self.encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-            label: Some("Render Tools Basic Render Pass"),
-            color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                view: &self.surface_view,
-                resolve_target: None,
-                ops: wgpu::Operations {
-                    load,
-                    store: wgpu::StoreOp::Store,
-                },
-            })],
-            depth_stencil_attachment,
-            timestamp_writes: None,
-            occlusion_query_set: None,
-        });
+        let render_pass = self
+            .encoder
+            .inner_mut()
+            .begin_render_pass(&wgpu::RenderPassDescriptor {
+                label: Some("Render Tools Basic Render Pass"),
+                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                    view: self.surface_view.inner(),
+                    resolve_target: None,
+                    ops: wgpu::Operations {
+                        load,
+                        store: wgpu::StoreOp::Store,
+                    },
+                })],
+                depth_stencil_attachment,
+                timestamp_writes: None,
+                occlusion_query_set: None,
+            });
 
         render_pass
     }
@@ -374,12 +388,12 @@ pub fn sys_setup_render_pass(
 ) {
     let pass = tools
         .begin_render_pass(RenderPassDesc {
-            use_depth: Some(&depth.0.view),
+            use_depth: Some(&depth.0.inner().view),
             clear_color: Some(clear_color.to_array()),
         })
         .forget_lifetime();
 
-    all_storages.insert(RenderPass(pass));
+    all_storages.insert(RenderPass(WasmWrapper::new(pass)));
 }
 
 pub fn sys_finish_main_render_pass(all_storages: AllStoragesView) {

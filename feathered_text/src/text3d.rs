@@ -1,6 +1,10 @@
 //====================================================================
 
-use feathered_render_tools::{camera::Camera3d, Device, Queue, RenderPass, SurfaceConfig, Vertex};
+use feathered_common::WasmWrapper;
+use feathered_render_tools::{
+    camera::Camera3d, shared::SharedRenderResources, Device, Queue, RenderPass, SurfaceConfig,
+    Vertex,
+};
 use feathered_shipyard::prelude::*;
 use feathered_spatial::Transform;
 use shipyard::{AllStoragesView, Component, IntoIter, SystemModificator, Unique, View, ViewMut};
@@ -33,13 +37,13 @@ fn sys_setup_text_renderer(
     device: Res<Device>,
     config: Res<SurfaceConfig>,
     text_atlas: Res<TextAtlas>,
-    camera: Res<Camera3d>,
+    shared: Res<SharedRenderResources>,
 ) {
     all_storages.insert(Text3dRenderer::new(
         device.inner(),
         config.inner(),
         &text_atlas,
-        camera.bind_group_layout(),
+        shared.camera_bind_group_layout(),
     ));
 }
 
@@ -59,14 +63,16 @@ fn sys_prep_text(
             &mut font_system.0,
             &mut swash_cache.0,
             &mut text_atlas,
-            &mut text_buffer.text_buffer,
+            text_buffer.text_buffer.inner_mut(),
         ) {
+            let text_buffer = text_buffer.text_buffer.inner_mut();
+
             feathered_render_tools::tools::update_instance_buffer(
                 device.inner(),
                 queue.inner(),
                 "Text3d Vertex Buffer",
-                &mut text_buffer.text_buffer.vertex_buffer,
-                &mut text_buffer.text_buffer.vertex_count,
+                &mut text_buffer.vertex_buffer,
+                &mut text_buffer.vertex_count,
                 &rebuild,
             );
         }
@@ -104,11 +110,11 @@ fn sys_render_text(
 
 #[derive(Component)]
 pub struct Text3dBuffer {
-    text_buffer: TextBuffer,
+    text_buffer: WasmWrapper<TextBuffer>,
 
     // 3d Transform
-    uniform_buffer: wgpu::Buffer,
-    uniform_bind_group: wgpu::BindGroup,
+    uniform_buffer: WasmWrapper<wgpu::Buffer>,
+    uniform_bind_group: WasmWrapper<wgpu::BindGroup>,
 }
 
 impl Text3dBuffer {
@@ -131,7 +137,7 @@ impl Text3dBuffer {
 
         let uniform_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("Text 3d Uniform Bind Group"),
-            layout: &text3d_renderer.uniform_bind_group_layout,
+            layout: text3d_renderer.uniform_bind_group_layout.inner(),
             entries: &[wgpu::BindGroupEntry {
                 binding: 0,
                 resource: wgpu::BindingResource::Buffer(uniform_buffer.as_entire_buffer_binding()),
@@ -139,16 +145,16 @@ impl Text3dBuffer {
         });
 
         Self {
-            text_buffer,
-            uniform_buffer,
-            uniform_bind_group,
+            text_buffer: WasmWrapper::new(text_buffer),
+            uniform_buffer: WasmWrapper::new(uniform_buffer),
+            uniform_bind_group: WasmWrapper::new(uniform_bind_group),
         }
     }
 
     #[inline]
     pub fn update_transform(&self, queue: &wgpu::Queue, transform: &Transform) {
         queue.write_buffer(
-            &self.uniform_buffer,
+            self.uniform_buffer.inner(),
             0,
             bytemuck::cast_slice(&[transform.to_matrix()]),
         );
@@ -159,8 +165,8 @@ impl Text3dBuffer {
 
 #[derive(Unique)]
 pub struct Text3dRenderer {
-    pipeline: wgpu::RenderPipeline,
-    uniform_bind_group_layout: wgpu::BindGroupLayout,
+    pipeline: WasmWrapper<wgpu::RenderPipeline>,
+    uniform_bind_group_layout: WasmWrapper<wgpu::BindGroupLayout>,
 }
 
 impl Text3dRenderer {
@@ -208,8 +214,8 @@ impl Text3dRenderer {
         );
 
         Self {
-            pipeline,
-            uniform_bind_group_layout,
+            pipeline: WasmWrapper::new(pipeline),
+            uniform_bind_group_layout: WasmWrapper::new(uniform_bind_group_layout),
         }
     }
 
@@ -222,14 +228,14 @@ impl Text3dRenderer {
     ) where
         B: IntoIterator<Item = &'a Text3dBuffer>,
     {
-        pass.set_pipeline(&self.pipeline);
+        pass.set_pipeline(self.pipeline.inner());
         pass.set_bind_group(0, camera_bind_group, &[]);
         pass.set_bind_group(1, atlas.bind_group(), &[]);
 
         buffers.into_iter().for_each(|buffer| {
-            pass.set_vertex_buffer(0, buffer.text_buffer.vertex_buffer.slice(..));
-            pass.set_bind_group(2, &buffer.uniform_bind_group, &[]);
-            pass.draw(0..4, 0..buffer.text_buffer.vertex_count);
+            pass.set_vertex_buffer(0, buffer.text_buffer.inner().vertex_buffer.slice(..));
+            pass.set_bind_group(2, buffer.uniform_bind_group.inner(), &[]);
+            pass.draw(0..4, 0..buffer.text_buffer.inner().vertex_count);
         });
     }
 }

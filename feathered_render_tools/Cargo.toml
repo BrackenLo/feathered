@@ -13,3 +13,6 @@ log = "0.4.22"
 pollster = "0.3.0"
 shipyard = "0.7.3"
 wgpu = "23"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wgpu = { version = "23", features = ["webgl"] }

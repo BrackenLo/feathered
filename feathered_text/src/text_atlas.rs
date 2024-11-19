@@ -4,7 +4,7 @@ use std::{collections::HashSet, error::Error, fmt::Display, hash::BuildHasherDef
 
 use cosmic_text::{CacheKey, SwashImage};
 use etagere::{euclid::Size2D, AllocId, BucketedAtlasAllocator};
-use feathered_common::Size;
+use feathered_common::{Size, WasmWrapper};
 use feathered_render_tools::texture::Texture;
 use lru::LruCache;
 use rustc_hash::FxHasher;
@@ -58,10 +58,10 @@ pub struct TextAtlas {
     glyphs_in_use: HashSet<CacheKey, Hasher>,
     cached_glyphs: LruCache<CacheKey, GlyphData, Hasher>,
 
-    texture: Texture,
+    texture: WasmWrapper<Texture>,
     texture_size: Size<u32>,
-    bind_group_layout: wgpu::BindGroupLayout,
-    bind_group: wgpu::BindGroup,
+    bind_group_layout: WasmWrapper<wgpu::BindGroupLayout>,
+    bind_group: WasmWrapper<wgpu::BindGroup>,
 }
 
 impl TextAtlas {
@@ -105,21 +105,21 @@ impl TextAtlas {
             packer,
             glyphs_in_use,
             cached_glyphs,
-            texture,
+            texture: WasmWrapper::new(texture),
             texture_size,
-            bind_group_layout,
-            bind_group,
+            bind_group_layout: WasmWrapper::new(bind_group_layout),
+            bind_group: WasmWrapper::new(bind_group),
         }
     }
 
     #[inline]
     pub fn bind_group_layout(&self) -> &wgpu::BindGroupLayout {
-        &self.bind_group_layout
+        self.bind_group_layout.inner()
     }
 
     #[inline]
     pub fn bind_group(&self) -> &wgpu::BindGroup {
-        &self.bind_group
+        self.bind_group.inner()
     }
 }
 
@@ -186,6 +186,7 @@ impl TextAtlas {
         let y = allocation.rectangle.min.y as u32;
 
         self.texture
+            .inner_mut()
             .update_area(queue, &image.data, x, y, image_width, image_height);
 
         let uv_start = [

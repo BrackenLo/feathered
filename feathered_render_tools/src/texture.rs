@@ -1,6 +1,6 @@
 //====================================================================
 
-use feathered_common::{Size, WindowResizeEvent, WindowSize};
+use feathered_common::{Size, WasmWrapper, WindowResizeEvent, WindowSize};
 use feathered_shipyard::{events::EventHandle, tools::UniqueTools, Res, ResMut};
 use image::GenericImageView;
 use shipyard::AllStoragesView;
@@ -10,22 +10,23 @@ use crate::Device;
 //====================================================================
 
 #[derive(shipyard::Unique)]
-pub struct DepthTexture(pub Texture);
+pub struct DepthTexture(pub WasmWrapper<Texture>);
 
 impl DepthTexture {
     pub fn new(device: &wgpu::Device, size: Size<u32>) -> Self {
         let depth_texture = Texture::create_depth_texture(&device, size, "Main Depth Texture");
 
-        Self(depth_texture)
+        Self(WasmWrapper::new(depth_texture))
     }
 
     #[inline]
     pub fn main_texture(&self) -> &Texture {
-        &self.0
+        self.0.inner()
     }
 
+    #[inline]
     fn resize(&mut self, device: &wgpu::Device, size: Size<u32>) {
-        self.0 = Texture::create_depth_texture(device, size, "Main Depth Texture");
+        *self.0.inner_mut() = Texture::create_depth_texture(device, size, "Main Depth Texture");
     }
 }
 

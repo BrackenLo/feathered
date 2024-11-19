@@ -1,5 +1,6 @@
 //====================================================================
 
+use feathered_common::WasmWrapper;
 use feathered_shipyard::{tools::UniqueTools, Res};
 use shipyard::{AllStoragesView, Unique};
 
@@ -9,7 +10,8 @@ use crate::{texture::Texture, tools, Device, Vertex};
 
 #[derive(Unique)]
 pub struct SharedRenderResources {
-    texture_bind_group_layout: wgpu::BindGroupLayout,
+    texture_bind_group_layout: WasmWrapper<wgpu::BindGroupLayout>,
+    camera_bind_group_layout: WasmWrapper<wgpu::BindGroupLayout>,
 }
 
 impl SharedRenderResources {
@@ -20,14 +22,35 @@ impl SharedRenderResources {
                 entries: &[tools::bgl_texture_entry(0), tools::bgl_sampler_entry(1)],
             });
 
+        let camera_bind_group_layout =
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                label: Some("Camera Bind Group Layout"),
+                entries: &[wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                }],
+            });
+
         Self {
-            texture_bind_group_layout,
+            texture_bind_group_layout: WasmWrapper::new(texture_bind_group_layout),
+            camera_bind_group_layout: WasmWrapper::new(camera_bind_group_layout),
         }
     }
 
     #[inline]
     pub fn texture_bind_group_layout(&self) -> &wgpu::BindGroupLayout {
-        &self.texture_bind_group_layout
+        self.texture_bind_group_layout.inner()
+    }
+
+    #[inline]
+    pub fn camera_bind_group_layout(&self) -> &wgpu::BindGroupLayout {
+        self.camera_bind_group_layout.inner()
     }
 
     pub fn create_bind_group(
@@ -38,7 +61,7 @@ impl SharedRenderResources {
     ) -> wgpu::BindGroup {
         device.create_bind_group(&wgpu::BindGroupDescriptor {
             label,
-            layout: &self.texture_bind_group_layout,
+            layout: self.texture_bind_group_layout.inner(),
             entries: &[
                 wgpu::BindGroupEntry {
                     binding: 0,
