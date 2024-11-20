@@ -130,9 +130,9 @@ pub const TEXTURE_RECT_INDEX_COUNT: u32 = TEXTURE_RECT_INDICES.len() as u32;
 #[repr(C)]
 #[derive(Clone, Copy, bytemuck::Zeroable, bytemuck::Pod)]
 pub struct ModelVertex {
-    pos: glam::Vec3,
-    uv: glam::Vec2,
-    normal: glam::Vec3,
+    pub pos: glam::Vec3,
+    pub uv: glam::Vec2,
+    pub normal: glam::Vec3,
 }
 
 impl Vertex for ModelVertex {

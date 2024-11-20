@@ -91,6 +91,23 @@ impl LoadedTexture {
     }
 
     #[inline]
+    pub fn load_blank(
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        shared: &SharedRenderResources,
+    ) -> Self {
+        let texture = Texture::from_color(
+            device,
+            queue,
+            [255, 255, 255],
+            Some("Default Blank Texture"),
+            None,
+        );
+
+        Self::load_texture(device, shared, texture)
+    }
+
+    #[inline]
     pub fn id(&self) -> TextureId {
         self.inner.id
     }

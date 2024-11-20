@@ -78,7 +78,7 @@ impl Plugin for RenderUtilsPlugin {
                     texture::sys_setup_depth_texture,
                     camera::sys_setup_3d_camera,
                 )
-                    .into_workload()
+                    .into_sequential_workload()
                     .tag(SetupUtils)
                     .after_all(SetupRendererComponents),
             )

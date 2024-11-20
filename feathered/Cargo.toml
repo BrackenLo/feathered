@@ -8,6 +8,7 @@ text = ["feathered_text"]
 
 [dependencies]
 feathered_common.path = "../feathered_common"
+feathered_physics.path = "../feathered_physics"
 feathered_pipelines.path = "../feathered_pipelines"
 feathered_render_tools.path = "../feathered_render_tools"
 feathered_runner.path = "../feathered_runner"
