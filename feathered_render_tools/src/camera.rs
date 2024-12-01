@@ -11,7 +11,7 @@ use crate::{shared::SharedRenderResources, Device, Queue};
 
 #[derive(Unique)]
 pub struct Camera3d {
-    pub data: PerspectiveCamera,
+    pub camera: PerspectiveCamera,
     pub wgpu: WasmWrapper<CameraWgpu>,
 }
 
@@ -24,18 +24,18 @@ impl Camera3d {
     ) -> Self {
         Self {
             wgpu: WasmWrapper::new(CameraWgpu::new(device, shared, &camera)),
-            data: camera,
+            camera,
         }
     }
 
     #[inline]
     pub fn update_camera(&self, queue: &wgpu::Queue) {
-        self.wgpu.inner().update_camera(queue, &self.data);
+        self.wgpu.update_camera(queue, &self.camera);
     }
 
     #[inline]
     pub fn bind_group(&self) -> &wgpu::BindGroup {
-        self.wgpu.inner().bind_group()
+        self.wgpu.bind_group()
     }
 }
 

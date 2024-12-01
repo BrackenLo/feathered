@@ -267,7 +267,7 @@ impl<T: bytemuck::Pod> InstanceBuffer<T> {
             device,
             queue,
             &self.label,
-            self.buffer.inner_mut(),
+            &mut self.buffer,
             &mut self.count,
             data,
         );
@@ -275,7 +275,7 @@ impl<T: bytemuck::Pod> InstanceBuffer<T> {
 
     #[inline]
     pub fn buffer(&self) -> &wgpu::Buffer {
-        self.buffer.inner()
+        &self.buffer
     }
 
     #[inline]
@@ -283,7 +283,7 @@ impl<T: bytemuck::Pod> InstanceBuffer<T> {
     where
         S: std::ops::RangeBounds<wgpu::BufferAddress>,
     {
-        self.buffer.inner().slice(bounds)
+        self.buffer.slice(bounds)
     }
 
     #[inline]

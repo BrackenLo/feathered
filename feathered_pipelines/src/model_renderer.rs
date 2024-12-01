@@ -301,15 +301,15 @@ fn sys_prep_renderer(
 fn sys_render(mut pass: ResMut<RenderPass>, renderer: Res<ModelRenderer>, camera: Res<Camera3d>) {
     let pass = pass.pass();
 
-    pass.set_pipeline(renderer.pipeline.inner());
+    pass.set_pipeline(&renderer.pipeline);
     pass.set_bind_group(0, camera.bind_group(), &[]);
 
     renderer.instances.iter().for_each(|(mesh_id, instance)| {
         let mesh = renderer.mesh_storage.get(mesh_id).unwrap();
 
-        pass.set_vertex_buffer(0, mesh.mesh().vertex_buffer.inner().slice(..));
+        pass.set_vertex_buffer(0, mesh.mesh().vertex_buffer.slice(..));
         pass.set_index_buffer(
-            mesh.mesh().index_buffer.inner().slice(..),
+            mesh.mesh().index_buffer.slice(..),
             wgpu::IndexFormat::Uint32,
         );
 

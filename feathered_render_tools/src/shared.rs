@@ -45,12 +45,12 @@ impl SharedRenderResources {
 
     #[inline]
     pub fn texture_bind_group_layout(&self) -> &wgpu::BindGroupLayout {
-        self.texture_bind_group_layout.inner()
+        &self.texture_bind_group_layout
     }
 
     #[inline]
     pub fn camera_bind_group_layout(&self) -> &wgpu::BindGroupLayout {
-        self.camera_bind_group_layout.inner()
+        &self.camera_bind_group_layout
     }
 
     pub fn create_texture_bind_group(
@@ -61,7 +61,7 @@ impl SharedRenderResources {
     ) -> wgpu::BindGroup {
         device.create_bind_group(&wgpu::BindGroupDescriptor {
             label,
-            layout: self.texture_bind_group_layout.inner(),
+            layout: &self.texture_bind_group_layout,
             entries: &[
                 wgpu::BindGroupEntry {
                     binding: 0,

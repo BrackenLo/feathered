@@ -27,12 +27,12 @@ impl DepthTexture {
 
     #[inline]
     pub fn main_texture(&self) -> &Texture {
-        self.0.inner()
+        &self.0
     }
 
     #[inline]
     fn resize(&mut self, device: &wgpu::Device, size: Size<u32>) {
-        *self.0.inner_mut() = Texture::create_depth_texture(device, size, "Main Depth Texture");
+        *self.0 = Texture::create_depth_texture(device, size, "Main Depth Texture");
     }
 }
 
@@ -114,12 +114,12 @@ impl LoadedTexture {
 
     #[inline]
     pub fn texture(&self) -> &Texture {
-        self.inner.texture.inner()
+        &self.inner.texture
     }
 
     #[inline]
     pub fn bind_group(&self) -> &wgpu::BindGroup {
-        self.inner.bind_group.inner()
+        &self.inner.bind_group
     }
 }
 

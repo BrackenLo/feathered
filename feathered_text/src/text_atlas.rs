@@ -114,12 +114,12 @@ impl TextAtlas {
 
     #[inline]
     pub fn bind_group_layout(&self) -> &wgpu::BindGroupLayout {
-        self.bind_group_layout.inner()
+        &self.bind_group_layout
     }
 
     #[inline]
     pub fn bind_group(&self) -> &wgpu::BindGroup {
-        self.bind_group.inner()
+        &self.bind_group
     }
 }
 
@@ -186,7 +186,6 @@ impl TextAtlas {
         let y = allocation.rectangle.min.y as u32;
 
         self.texture
-            .inner_mut()
             .update_area(queue, &image.data, x, y, image_width, image_height);
 
         let uv_start = [

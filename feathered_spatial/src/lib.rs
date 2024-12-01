@@ -14,14 +14,15 @@ impl Plugin for SpatialPlugin {
 }
 
 fn sys_update_global(v_transform: View<Transform>, mut vm_global: ViewMut<GlobalTransform>) {
-    (&v_transform, &mut vm_global)
+    (v_transform.inserted_or_modified(), &mut vm_global)
         .iter()
-        .for_each(|(transform, global)| global.0 = transform.to_affine());
+        .for_each(|(transform, mut global)| global.0 = transform.to_affine());
 }
 
 //====================================================================
 
 #[derive(Component, Debug, Default, Clone, PartialEq)]
+#[track(All)]
 pub struct GlobalTransform(pub glam::Affine3A);
 
 impl GlobalTransform {

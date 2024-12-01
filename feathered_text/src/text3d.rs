@@ -63,9 +63,9 @@ fn sys_prep_text(
             &mut font_system.0,
             &mut swash_cache.0,
             &mut text_atlas,
-            text_buffer.text_buffer.inner_mut(),
+            &mut text_buffer.text_buffer,
         ) {
-            let text_buffer = text_buffer.text_buffer.inner_mut();
+            let text_buffer = &mut text_buffer.text_buffer.0;
 
             feathered_render_tools::tools::update_instance_buffer(
                 device.inner(),
@@ -137,7 +137,7 @@ impl Text3dBuffer {
 
         let uniform_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("Text 3d Uniform Bind Group"),
-            layout: text3d_renderer.uniform_bind_group_layout.inner(),
+            layout: &text3d_renderer.uniform_bind_group_layout,
             entries: &[wgpu::BindGroupEntry {
                 binding: 0,
                 resource: wgpu::BindingResource::Buffer(uniform_buffer.as_entire_buffer_binding()),
@@ -154,7 +154,7 @@ impl Text3dBuffer {
     #[inline]
     pub fn update_transform(&self, queue: &wgpu::Queue, transform: &Transform) {
         queue.write_buffer(
-            self.uniform_buffer.inner(),
+            &self.uniform_buffer,
             0,
             bytemuck::cast_slice(&[transform.to_matrix()]),
         );
@@ -228,14 +228,14 @@ impl Text3dRenderer {
     ) where
         B: IntoIterator<Item = &'a Text3dBuffer>,
     {
-        pass.set_pipeline(self.pipeline.inner());
+        pass.set_pipeline(&self.pipeline);
         pass.set_bind_group(0, camera_bind_group, &[]);
         pass.set_bind_group(1, atlas.bind_group(), &[]);
 
         buffers.into_iter().for_each(|buffer| {
-            pass.set_vertex_buffer(0, buffer.text_buffer.inner().vertex_buffer.slice(..));
-            pass.set_bind_group(2, buffer.uniform_bind_group.inner(), &[]);
-            pass.draw(0..4, 0..buffer.text_buffer.inner().vertex_count);
+            pass.set_vertex_buffer(0, buffer.text_buffer.vertex_buffer.slice(..));
+            pass.set_bind_group(2, &buffer.uniform_bind_group.0, &[]);
+            pass.draw(0..4, 0..buffer.text_buffer.vertex_count);
         });
     }
 }

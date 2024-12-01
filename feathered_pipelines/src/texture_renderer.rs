@@ -206,14 +206,11 @@ fn sys_prep_renderer(
 fn sys_render(mut pass: ResMut<RenderPass>, renderer: Res<TextureRenderer>, camera: Res<Camera3d>) {
     let pass = pass.pass();
 
-    pass.set_pipeline(renderer.pipeline.inner());
+    pass.set_pipeline(&renderer.pipeline);
     pass.set_bind_group(0, camera.bind_group(), &[]);
 
-    pass.set_vertex_buffer(0, renderer.vertex_buffer.inner().slice(..));
-    pass.set_index_buffer(
-        renderer.index_buffer.inner().slice(..),
-        wgpu::IndexFormat::Uint16,
-    );
+    pass.set_vertex_buffer(0, renderer.vertex_buffer.0.slice(..));
+    pass.set_index_buffer(renderer.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
 
     renderer
         .instances

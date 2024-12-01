@@ -1,6 +1,10 @@
 //====================================================================
 
-use std::{fmt::Display, sync::Arc};
+use std::{
+    fmt::Display,
+    ops::{Deref, DerefMut},
+    sync::Arc,
+};
 
 use feathered_shipyard::{
     events::{Event, EventBuilder},
@@ -29,7 +33,7 @@ impl Plugin for CommonPlugin {
 
 #[cfg(not(target_arch = "wasm32"))]
 #[derive(Debug)]
-pub struct WasmWrapper<T>(T);
+pub struct WasmWrapper<T>(pub T);
 
 #[cfg(target_arch = "wasm32")]
 #[derive(Debug)]
@@ -46,22 +50,28 @@ impl<T> WasmWrapper<T> {
     }
 
     #[inline]
-    pub fn inner(&self) -> &T {
-        &self.0
-    }
-
-    #[inline]
-    pub fn inner_mut(&mut self) -> &mut T {
-        &mut self.0
-    }
-
-    #[inline]
     pub fn take(self) -> T {
         #[cfg(not(target_arch = "wasm32"))]
         return self.0;
 
         #[cfg(target_arch = "wasm32")]
         return self.0.take();
+    }
+}
+
+impl<T> Deref for WasmWrapper<T> {
+    type Target = T;
+
+    #[inline]
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl<T> DerefMut for WasmWrapper<T> {
+    #[inline]
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
     }
 }
 

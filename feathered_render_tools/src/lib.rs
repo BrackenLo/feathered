@@ -104,7 +104,7 @@ pub struct Device(WasmWrapper<wgpu::Device>);
 impl Device {
     #[inline]
     pub fn inner(&self) -> &wgpu::Device {
-        &self.0.inner()
+        &self.0
     }
 }
 
@@ -113,12 +113,12 @@ pub struct Queue(WasmWrapper<wgpu::Queue>);
 impl Queue {
     #[inline]
     pub fn inner(&self) -> &wgpu::Queue {
-        &self.0.inner()
+        &self.0
     }
 
     #[inline]
     pub fn write_buffer(&self, buffer: &wgpu::Buffer, offset: u64, data: &[u8]) {
-        self.0.inner().write_buffer(buffer, offset, data);
+        self.0.write_buffer(buffer, offset, data);
     }
 }
 
@@ -127,7 +127,7 @@ pub struct Surface(WasmWrapper<wgpu::Surface<'static>>);
 impl Surface {
     #[inline]
     pub fn inner(&self) -> &wgpu::Surface {
-        &self.0.inner()
+        &self.0
     }
 }
 
@@ -264,7 +264,7 @@ pub struct RenderPass(WasmWrapper<wgpu::RenderPass<'static>>);
 impl RenderPass {
     #[inline]
     pub fn pass(&mut self) -> &mut wgpu::RenderPass<'static> {
-        self.0.inner_mut()
+        &mut self.0
     }
 }
 
@@ -352,23 +352,20 @@ impl RenderEncoder {
             None => wgpu::LoadOp::Load,
         };
 
-        let render_pass = self
-            .encoder
-            .inner_mut()
-            .begin_render_pass(&wgpu::RenderPassDescriptor {
-                label: Some("Render Tools Basic Render Pass"),
-                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                    view: self.surface_view.inner(),
-                    resolve_target: None,
-                    ops: wgpu::Operations {
-                        load,
-                        store: wgpu::StoreOp::Store,
-                    },
-                })],
-                depth_stencil_attachment,
-                timestamp_writes: None,
-                occlusion_query_set: None,
-            });
+        let render_pass = self.encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+            label: Some("Render Tools Basic Render Pass"),
+            color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                view: &self.surface_view,
+                resolve_target: None,
+                ops: wgpu::Operations {
+                    load,
+                    store: wgpu::StoreOp::Store,
+                },
+            })],
+            depth_stencil_attachment,
+            timestamp_writes: None,
+            occlusion_query_set: None,
+        });
 
         render_pass
     }
@@ -395,7 +392,7 @@ pub fn sys_setup_render_pass(
 ) {
     let pass = tools
         .begin_render_pass(RenderPassDesc {
-            use_depth: Some(&depth.0.inner().view),
+            use_depth: Some(&depth.0.view),
             clear_color: Some(clear_color.to_array()),
         })
         .forget_lifetime();
